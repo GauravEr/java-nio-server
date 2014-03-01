@@ -1,32 +1,29 @@
 package cs455.scale.server;
 
-import cs455.scale.util.LoggingUtil;
-
-import java.util.concurrent.CountDownLatch;
+import java.util.Random;
 
 /**
  * Author: Thilina
  * Date: 2/28/14
  */
-public class Job implements Runnable {
+public class Job {
 
-    private final CountDownLatch countDownLatch;
-    private boolean initialized;
+    int id;
 
-    public Job(CountDownLatch countDownLatch) {
-        this.countDownLatch = countDownLatch;
+    public Job(int id) {
+        this.id = id;
     }
 
-
-    @Override
-    public void run() {
-        if(!initialized){
-            countDownLatch.countDown();
-            initialized = true;
-            LoggingUtil.logInfo("Thread [" + Thread.currentThread().getId() + "] started successfully!");
+    public void complete(){
+        long tid = Thread.currentThread().getId();
+//        System.out.println("Thread[" + tid + "] started the job " + id);
+        Random rand = new Random(System.currentTimeMillis());
+        int length = rand.nextInt(4);
+        try {
+            Thread.sleep(length * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        while(true){
-
-        }
+//        System.out.println("Thread[" + tid + "] completed the job " + id);
     }
 }

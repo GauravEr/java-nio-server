@@ -21,6 +21,16 @@ public class Server {
         return threadPool.initialize();
     }
 
+    /**
+     * Temporary test method to test the thread pool
+     */
+    public void submitJobs(){
+        for(int i = 0; i < 1000000; i++){
+            Job job = new Job(i);
+            threadPool.submitJob(job);
+        }
+    }
+
     public static void main(String[] args) {
         if(args.length < 2){
             LoggingUtil.logError("Missing required arguments. Expecting " +
@@ -36,5 +46,6 @@ public class Server {
         if(initialized){
             LoggingUtil.logInfo("Server started successfully!");
         }
+        server.submitJobs();
     }
 }
