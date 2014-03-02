@@ -1,5 +1,6 @@
 package cs455.scale.server;
 
+import cs455.scale.server.task.Task;
 import cs455.scale.util.LoggingUtil;
 
 import java.util.ArrayList;
@@ -20,7 +21,6 @@ public class ThreadPool extends Thread {
     private final CountDownLatch countDownLatch;
     private volatile boolean initialized;
     private Queue<Worker> idleThreads;
-    private Queue<Job> jobQueue;
 
     // temp variables
     private AtomicLong submittedJobCount = new AtomicLong();
@@ -47,7 +47,6 @@ public class ThreadPool extends Thread {
         countDownLatch = new CountDownLatch(size);
         workers = new ArrayList<Thread>(size);
         idleThreads = new ConcurrentLinkedQueue<Worker>();
-        jobQueue = new ConcurrentLinkedQueue<Job>();
     }
 
     public boolean initialize(){
@@ -82,11 +81,6 @@ public class ThreadPool extends Thread {
         completedJobCount.incrementAndGet();
     }
 
-    public void submitJob(Job job){
-        jobQueue.add(job);
-        submittedJobCount.incrementAndGet();
-    }
-
     public void printStatistics(){
         LoggingUtil.logInfo("Submitted Jobs: " + submittedJobCount);
         LoggingUtil.logInfo("Completed Jobs: " + completedJobCount);
@@ -94,12 +88,13 @@ public class ThreadPool extends Thread {
 
     @Override
     public void run() {
+        JobQueue jobQueue = JobQueue.getInstance();
         // run scheduling
         while (true){
-            if(!jobQueue.isEmpty() && !idleThreads.isEmpty()){
-                Job job = jobQueue.remove();
+            Task task = jobQueue.getNextJob();
+            if(task != null && !idleThreads.isEmpty()){
                 Worker worker = idleThreads.remove();
-                worker.addJob(job);
+                worker.addJob(task);
             }
         }
     }

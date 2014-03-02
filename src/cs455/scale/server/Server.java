@@ -1,6 +1,17 @@
 package cs455.scale.server;
 
+import cs455.scale.server.task.ConnectionAcceptTask;
+import cs455.scale.server.task.ReadTask;
 import cs455.scale.util.LoggingUtil;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Author: Thilina
@@ -21,16 +32,6 @@ public class Server {
         return threadPool.initialize();
     }
 
-    /**
-     * Temporary test method to test the thread pool
-     */
-    public void submitJobs(){
-        for(int i = 0; i < 1000000; i++){
-            Job job = new Job(i);
-            threadPool.submitJob(job);
-        }
-    }
-
     public static void main(String[] args) {
         if(args.length < 2){
             LoggingUtil.logError("Missing required arguments. Expecting " +
@@ -46,6 +47,50 @@ public class Server {
         if(initialized){
             LoggingUtil.logInfo("Server started successfully!");
         }
-        server.submitJobs();
+
+        try {
+            ServerSocketChannel ssc = ServerSocketChannel.open();
+
+            ssc.configureBlocking(false);
+
+            ServerSocket ss = ssc.socket();
+            InetSocketAddress isa = new InetSocketAddress(server.port);
+            ss.bind(isa);
+
+            Selector selector = Selector.open();
+
+            ssc.register(selector, SelectionKey.OP_ACCEPT);
+            System.out.println("Listening on port " + port);
+            JobQueue jobQueue = JobQueue.getInstance();
+
+            while(true){
+                int num = selector.select();
+
+                if (num == 0) {
+                    continue;
+                }
+
+                Set keys = selector.selectedKeys();
+                Iterator it = keys.iterator();
+                while (it.hasNext()) {
+
+                    SelectionKey key = (SelectionKey) it.next();
+
+                    if ((key.readyOps() & SelectionKey.OP_ACCEPT) ==
+                            SelectionKey.OP_ACCEPT) {
+                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(selector, ss);
+                        jobQueue.addJob(connAcceptTask);
+                    } else if((key.readyOps() & SelectionKey.OP_READ) ==
+                            SelectionKey.OP_READ){
+                        ReadTask readTask = new ReadTask(key);
+                        jobQueue.addJob(readTask);
+                    }
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 }
