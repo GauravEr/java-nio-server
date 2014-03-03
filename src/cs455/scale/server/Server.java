@@ -28,12 +28,12 @@ public class Server {
         this.threadPool = new ThreadPool(threadPoolSize);
     }
 
-    public boolean initialize(){
+    public boolean initialize() {
         return threadPool.initialize();
     }
 
     public static void main(String[] args) {
-        if(args.length < 2){
+        if (args.length < 2) {
             LoggingUtil.logError("Missing required arguments. Expecting " +
                     "\'java cs455.scaling.server.Server port-num thread-pool-size\'");
             System.exit(-1);
@@ -44,7 +44,7 @@ public class Server {
         // Server instance
         Server server = new Server(port, threadPoolSize);
         boolean initialized = server.initialize();
-        if(initialized){
+        if (initialized) {
             LoggingUtil.logInfo("Server started successfully!");
         }
 
@@ -63,8 +63,10 @@ public class Server {
             System.out.println("Listening on port " + port);
             JobQueue jobQueue = JobQueue.getInstance();
 
-            while(true){
-                int num = selector.select();
+            while (true) {
+
+                int num;
+                num = selector.selectNow();
 
                 if (num == 0) {
                     continue;
@@ -78,10 +80,10 @@ public class Server {
 
                     if ((key.readyOps() & SelectionKey.OP_ACCEPT) ==
                             SelectionKey.OP_ACCEPT) {
-                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(selector, ss);
+                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(selector, ss, key);
                         jobQueue.addJob(connAcceptTask);
-                    } else if((key.readyOps() & SelectionKey.OP_READ) ==
-                            SelectionKey.OP_READ){
+                    } else if ((key.readyOps() & SelectionKey.OP_READ) ==
+                            SelectionKey.OP_READ) {
                         ReadTask readTask = new ReadTask(key);
                         jobQueue.addJob(readTask);
                     }

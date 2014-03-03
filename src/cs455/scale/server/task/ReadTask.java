@@ -23,6 +23,7 @@ public class ReadTask implements Task {
 
     @Override
     public void complete() {
+        System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
         JobQueue jobQueue = JobQueue.getInstance();
@@ -32,7 +33,15 @@ public class ReadTask implements Task {
             socketChannel.read(byteBuffer);
             if(!byteBuffer.hasRemaining()){ // we have read 8k of data
                 byteBuffer.flip();
-                WriteTask writeTask = new WriteTask(byteBuffer, socketChannel);
+                //
+                //byte[] msg = new byte[8*1024];
+//                System.out.println(">>>>>>");
+//                byteBuffer.get(msg);
+//                System.out.println("<<<<<<");
+//                System.out.println("Server Received : " + Arrays.toString(msg));
+//                byteBuffer.flip();
+                //
+                WriteTask writeTask = new WriteTask(byteBuffer, socketChannel, selectionKey);
                 jobQueue.addJob(writeTask);
             }
         } catch (IOException e) {

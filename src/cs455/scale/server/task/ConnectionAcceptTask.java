@@ -17,10 +17,12 @@ public class ConnectionAcceptTask implements Task {
 
     private final ServerSocket serverSocket;
     private final Selector selector;
+    private final SelectionKey key;
 
-    public ConnectionAcceptTask(Selector selector, ServerSocket serverSocket) {
+    public ConnectionAcceptTask(Selector selector, ServerSocket serverSocket, SelectionKey key) {
         this.selector = selector;
         this.serverSocket = serverSocket;
+        this.key = key;
     }
 
     @Override
@@ -30,6 +32,8 @@ public class ConnectionAcceptTask implements Task {
             SocketChannel socketChannel = socket.getChannel();
             socketChannel.configureBlocking(false);
             socketChannel.register(selector, SelectionKey.OP_READ);
+            System.out.println("Connection Accept Completed!");
+            key.cancel();
         } catch (IOException e) {
             LoggingUtil.logError("Error accepting connection.", e);
         }

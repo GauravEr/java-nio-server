@@ -27,11 +27,13 @@ public class WriteTask implements Task{
     public void complete() {
         // need to implement hashing here
         try {
+            System.out.println("Writing Started!");
             socketChannel.write(buffer);
             if(buffer.hasRemaining()){
                 JobQueue.getInstance().addJob(this);
             } else {
                 selectionKey.cancel();
+                //buffer.clear();
             }
         } catch (IOException e) {
             e.printStackTrace();
