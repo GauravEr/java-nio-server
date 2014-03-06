@@ -26,7 +26,7 @@ public class ThreadPool extends Thread {
     private AtomicLong submittedJobCount = new AtomicLong();
     private AtomicLong completedJobCount = new AtomicLong();
 
-    class StatisticsThread implements Runnable {
+   /* class StatisticsThread implements Runnable {
 
         @Override
         public void run() {
@@ -39,8 +39,8 @@ public class ThreadPool extends Thread {
                 }
             }
         }
-    }
-    private StatisticsThread statisticsThread = new StatisticsThread();
+    }*/
+    //private StatisticsThread statisticsThread = new StatisticsThread();
 
     public ThreadPool(int size) {
         this.size = size;
@@ -51,7 +51,7 @@ public class ThreadPool extends Thread {
 
     public boolean initialize(){
         this.start();
-        new Thread(statisticsThread).start();
+        //new Thread(statisticsThread).start();
         for(int i = 0; i < size; i++){
             workers.add(new Thread(new Worker(this)));
         }

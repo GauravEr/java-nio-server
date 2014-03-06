@@ -109,6 +109,7 @@ public class Server {
 
                 while(it.hasNext()){
                     SelectionKey key = (SelectionKey) it.next();
+                    it.remove();
                     if(!key.isValid()){
                         continue;
                     }
@@ -124,7 +125,7 @@ public class Server {
                         jobQueue.addJob(writeTask);
                     }
                 }
-                keys.clear();
+
             }
         } catch (IOException e) {
             e.printStackTrace();

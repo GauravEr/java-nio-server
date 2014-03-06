@@ -32,15 +32,34 @@ public class ReadTask extends AbstractTask {
         BufferManager bufferManager = BufferManager.getInstance();
         try {
             ByteBuffer byteBuffer = bufferManager.getBuffer(socketChannel);
-            socketChannel.read(byteBuffer);
+            System.out.println("[" + jobId + "] Before Reading: " + byteBuffer.position() + ", " + byteBuffer.limit());
+
+            int bytesRead = socketChannel.read(byteBuffer);
+            if(bytesRead == -1){
+                socketChannel.close();
+                selectionKey.cancel();
+                return;
+            }
+
             if(!byteBuffer.hasRemaining()){ // we have read 8k of data
+                System.out.println("[" + jobId + "] Before Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
+
                 byteBuffer.flip();
+                System.out.println("[" + jobId + "] After Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
+
+                byte[] dataArray = byteBuffer.array();
+                System.out.println("last bytes----------------------------------");
+                for(int i = 0; i < dataArray.length; i++){
+                    System.out.print(dataArray[i] + ",");
+                }
+                System.out.println("---------------------------------------------");
                 ServerChannelChange serverChannelChange =
                         new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
                 server.addChannelChange(serverChannelChange);
             }
         } catch (IOException e) {
             try {
+                e.printStackTrace();
                 System.out.println("Cancelling Read key.");
                 socketChannel.close();
                 selectionKey.cancel();
