@@ -1,7 +1,7 @@
 package cs455.scale.server;
 
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,7 +13,7 @@ public class BufferManager {
 
     private static final BufferManager instance = new BufferManager();
 
-    private Map<SocketAddress, ByteBuffer> bufferMap = new ConcurrentHashMap<SocketAddress, ByteBuffer>();
+    private Map<SocketChannel, ByteBuffer> bufferMap = new ConcurrentHashMap<SocketChannel, ByteBuffer>();
 
     private BufferManager(){
 
@@ -23,16 +23,16 @@ public class BufferManager {
         return instance;
     }
 
-    public void registerBuffer(SocketAddress socketAddress, ByteBuffer buffer){
-        bufferMap.put(socketAddress, buffer);
+    public void deregisterBuffer(SocketChannel socketChannel){
+        bufferMap.remove(socketChannel);
     }
 
-    public ByteBuffer getBuffer(SocketAddress socketAddress){
+    public ByteBuffer getBuffer(SocketChannel socketChannel){
         ByteBuffer byteBuffer = ByteBuffer.allocate(8*1024);
-        if(bufferMap.containsKey(socketAddress)){
-            byteBuffer = bufferMap.get(socketAddress);
+        if(bufferMap.containsKey(socketChannel)){
+            byteBuffer = bufferMap.get(socketChannel);
         } else {
-            bufferMap.put(socketAddress, byteBuffer);
+            bufferMap.put(socketChannel, byteBuffer);
         }
         return byteBuffer;
     }

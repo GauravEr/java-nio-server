@@ -1,10 +1,10 @@
 package cs455.scale.server.task;
 
 import cs455.scale.server.BufferManager;
-import cs455.scale.server.JobQueue;
+import cs455.scale.server.Server;
+import cs455.scale.server.ServerChannelChange;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -13,39 +13,40 @@ import java.nio.channels.SocketChannel;
  * Author: Thilina
  * Date: 3/1/14
  */
-public class ReadTask implements Task {
+public class ReadTask extends AbstractTask {
 
     private final SelectionKey selectionKey;
+    private final Server server;
 
-    public ReadTask(SelectionKey selectionKey) {
+    public ReadTask(SelectionKey selectionKey, Server server) {
+        super(selectionKey,server);
         this.selectionKey = selectionKey;
+        this.server = server;
     }
 
     @Override
     public void complete() {
+        System.out.println(jobId + "->" + this.getClass());
         System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
-        JobQueue jobQueue = JobQueue.getInstance();
         try {
-            SocketAddress socketAddress = socketChannel.getRemoteAddress();
-            ByteBuffer byteBuffer = bufferManager.getBuffer(socketAddress);
+            ByteBuffer byteBuffer = bufferManager.getBuffer(socketChannel);
             socketChannel.read(byteBuffer);
             if(!byteBuffer.hasRemaining()){ // we have read 8k of data
                 byteBuffer.flip();
-                //
-                //byte[] msg = new byte[8*1024];
-//                System.out.println(">>>>>>");
-//                byteBuffer.get(msg);
-//                System.out.println("<<<<<<");
-//                System.out.println("Server Received : " + Arrays.toString(msg));
-//                byteBuffer.flip();
-                //
-                WriteTask writeTask = new WriteTask(byteBuffer, socketChannel, selectionKey);
-                jobQueue.addJob(writeTask);
+                ServerChannelChange serverChannelChange =
+                        new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
+                server.addChannelChange(serverChannelChange);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            try {
+                System.out.println("Cancelling Read key.");
+                socketChannel.close();
+                selectionKey.cancel();
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
         }
     }
 }

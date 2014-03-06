@@ -1,39 +1,35 @@
 package cs455.scale.server.task;
 
+import cs455.scale.server.Server;
+import cs455.scale.server.ServerChannelChange;
 import cs455.scale.util.LoggingUtil;
 
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 /**
  * Author: Thilina
  * Date: 3/1/14
  */
-public class ConnectionAcceptTask implements Task {
+public class ConnectionAcceptTask extends AbstractTask {
 
-    private final ServerSocket serverSocket;
-    private final Selector selector;
-    private final SelectionKey key;
-
-    public ConnectionAcceptTask(Selector selector, ServerSocket serverSocket, SelectionKey key) {
-        this.selector = selector;
-        this.serverSocket = serverSocket;
-        this.key = key;
+    public ConnectionAcceptTask(SelectionKey selectionKey, Server server) {
+        super(selectionKey, server);
     }
 
     @Override
     public void complete() {
+        System.out.println(jobId + "->" + this.getClass());
         try {
-            Socket socket = serverSocket.accept();
-            SocketChannel socketChannel = socket.getChannel();
-            socketChannel.configureBlocking(false);
-            socketChannel.register(selector, SelectionKey.OP_READ);
-            System.out.println("Connection Accept Completed!");
-            key.cancel();
+            SocketChannel socketChannel = ((ServerSocketChannel)selectionKey.channel()).accept();
+            if (socketChannel != null) {
+                socketChannel.configureBlocking(false);
+                ServerChannelChange serverChannelChange = new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
+                server.addChannelChange(serverChannelChange);
+                System.out.println("Connection Accept Completed!");
+            }
         } catch (IOException e) {
             LoggingUtil.logError("Error accepting connection.", e);
         }
