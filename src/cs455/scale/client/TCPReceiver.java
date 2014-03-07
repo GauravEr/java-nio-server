@@ -23,7 +23,7 @@ public class TCPReceiver extends Thread {
     public void run() {
         while(socket != null){
             try {
-                int dataLength = 10;
+                int dataLength = 1024*8;
                 if (dataLength > 0) {
                     byte[] data = new byte[dataLength];
                     dataInputStream.readFully(data);

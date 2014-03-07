@@ -32,27 +32,37 @@ public class ReadTask extends AbstractTask {
         BufferManager bufferManager = BufferManager.getInstance();
         try {
             ByteBuffer byteBuffer = bufferManager.getBuffer(socketChannel);
-            System.out.println("[" + jobId + "] Before Reading: " + byteBuffer.position() + ", " + byteBuffer.limit());
+
+
 
             int bytesRead = socketChannel.read(byteBuffer);
+
+            byte[] dataArray1 = byteBuffer.array();
+            /*System.out.println("After reading ----------------------------------");
+            for(int i = 0; i < dataArray1.length; i++){
+                System.out.print(dataArray1[i] + ",");
+            }*/
+
+//            System.out.println("Bytes Read: " + bytesRead + ", has remaining " + byteBuffer.hasRemaining());
             if(bytesRead == -1){
                 socketChannel.close();
                 selectionKey.cancel();
                 return;
             }
+//            System.out.println("[" + jobId + "] After Reading: " + byteBuffer.position() + ", " + byteBuffer.limit());
 
             if(!byteBuffer.hasRemaining()){ // we have read 8k of data
-                System.out.println("[" + jobId + "] Before Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
+//                System.out.println("[" + jobId + "] Before Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
 
                 byteBuffer.flip();
-                System.out.println("[" + jobId + "] After Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
+//                System.out.println("[" + jobId + "] After Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
 
-                byte[] dataArray = byteBuffer.array();
+               /* byte[] dataArray = byteBuffer.array();
                 System.out.println("last bytes----------------------------------");
                 for(int i = 0; i < dataArray.length; i++){
                     System.out.print(dataArray[i] + ",");
                 }
-                System.out.println("---------------------------------------------");
+                System.out.println("---------------------------------------------");*/
                 ServerChannelChange serverChannelChange =
                         new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
                 server.addChannelChange(serverChannelChange);

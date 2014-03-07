@@ -18,7 +18,7 @@ public class ScaleUtil {
     }
 
     public static byte[] getPayLoad(){
-        byte[] payload = new byte[10];
+        byte[] payload = new byte[1024*8];
         random.nextBytes(payload);
         return payload;
     }

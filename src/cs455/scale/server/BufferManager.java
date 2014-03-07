@@ -28,7 +28,7 @@ public class BufferManager {
     }
 
     public ByteBuffer getBuffer(SocketChannel socketChannel){
-        ByteBuffer byteBuffer = ByteBuffer.allocate(10);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(1024*8);
         if(bufferMap.containsKey(socketChannel)){
             byteBuffer = bufferMap.get(socketChannel);
         } else {

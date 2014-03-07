@@ -16,8 +16,6 @@ public class TCPSender {
     }
 
     public synchronized void sendData(byte[] data) throws IOException {
-        int dataLength = data.length;
-        dataOutputStream.writeInt(dataLength);
         dataOutputStream.write(data);
         dataOutputStream.flush();
     }

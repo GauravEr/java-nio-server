@@ -116,13 +116,16 @@ public class Server {
                     if (key.isAcceptable()) {
                         System.out.println("key" + key);
                         ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                        jobQueue.addJob(connAcceptTask);
+                        connAcceptTask.complete();
+                        //jobQueue.addJob(connAcceptTask);
                     } else if (key.isReadable()) {
                         ReadTask readTask = new ReadTask(key, this);
-                        jobQueue.addJob(readTask);
+                        readTask.complete();
+                        //jobQueue.addJob(readTask);
                     } else if (key.isWritable()){
                         WriteTask writeTask = new WriteTask(key, this);
-                        jobQueue.addJob(writeTask);
+                        writeTask.complete();
+                        //jobQueue.addJob(writeTask);
                     }
                 }
 

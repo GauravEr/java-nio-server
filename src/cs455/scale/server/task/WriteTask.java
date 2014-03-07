@@ -27,20 +27,20 @@ public class WriteTask extends AbstractTask{
 
     @Override
     public void complete() {
-        System.out.println(jobId + "->" + this.getClass());
+//        System.out.println(jobId + "->" + this.getClass());
         // need to implement hashing here
         try {
-            System.out.println("[" + jobId + "] Before Writing: " + buffer.position() + ", " + buffer.limit());
+           /* System.out.println("[" + jobId + "] Before Writing: " + buffer.position() + ", " + buffer.limit());
             System.out.println("[" + jobId + "]Writing Started!");
-            System.out.println("[" + jobId + "]To Be Written: " + buffer.position());
+            System.out.println("[" + jobId + "]To Be Written: " + (buffer.limit() - buffer.position()));*/
             socketChannel.write(buffer);
-            System.out.println("[" + jobId + "]After Writing: " + buffer.position() + ", " + buffer.limit());
+//            System.out.println("[" + jobId + "]After Writing: " + buffer.position() + ", " + buffer.limit());
 
             if(buffer.hasRemaining()){
                 JobQueue.getInstance().addJob(this);
 
             } else {
-                System.out.println("[" + jobId + "]Writing Completed!");
+//                System.out.println("[" + jobId + "]Writing Completed!");
                 BufferManager.getInstance().deregisterBuffer(socketChannel);
                 ServerChannelChange serverChannelChange =
                         new ServerChannelChange(socketChannel, SelectionKey.OP_READ);

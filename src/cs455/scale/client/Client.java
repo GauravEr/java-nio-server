@@ -5,14 +5,16 @@ import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Author: Thilina
  * Date: 3/2/14
  */
-public class Client {
+public class Client implements Runnable{
 
     private String serverHost;
     private int serverPort;
@@ -20,7 +22,9 @@ public class Client {
     private Socket socket = null;
     private TCPSender tcpSender = null;
     private TCPReceiver tcpReceiver = null;
-    private Queue<byte[]> sentData = new ConcurrentLinkedDeque<byte[]>();
+    private Map<String, byte[]> sentData = new ConcurrentHashMap<String, byte[]>();
+    private AtomicInteger sentCount = new AtomicInteger(0);
+    private AtomicInteger receivedCount = new AtomicInteger(0);
 
     public Client(String serverHost, int serverPort, int messageRate) throws IOException {
         this.serverHost = serverHost;
@@ -33,15 +37,22 @@ public class Client {
     public void init() throws IOException {
         tcpReceiver = new TCPReceiver(socket, new Callback() {
             @Override
-            public void invoke(byte[] data) {
-                byte[] sent = sentData.remove();
-                System.out.println("Received data:");
-                for (int i = 0; i < sent.length; i++) {
+            public void invoke(byte[] receivedBytes) {
+
+               // System.out.println("Received data:");
+                /*for (int i = 0; i < data.length; i++) {
                     System.out.print(data[i] + ",");
 
+                }*/
+                String key = new String(receivedBytes, 0, 5);
+                byte[] sentBytes = sentData.get(key);
+                if(!Arrays.equals(receivedBytes, sentBytes)){
+                    System.out.println("Data Corruption!");
+                } else {
+                    receivedCount.getAndIncrement();
+                    System.out.println("[" + Thread.currentThread().getId() + "] " + "Sent: " + sentCount.get()
+                    + ", Received: " + receivedCount.get());
                 }
-                System.out.println();
-                //System.out.println("data is equal!");
             }
         });
         tcpReceiver.start();
@@ -50,13 +61,15 @@ public class Client {
     public void sendMessage() throws IOException {
         byte[] payload = ScaleUtil.getPayLoad();
         //System.out.println("Sent: " + Arrays.toString(payload));
-        System.out.println("last bytes----------------------------------");
-        for(int i = 0; i < payload.length; i++){
-            System.out.print(payload[i] + ",");
-        }
-        System.out.println("---------------------------------------------");
+//        System.out.println("sent data ----------------------------------");
+//        for(int i = 0; i < payload.length; i++){
+//            System.out.print(payload[i] + ",");
+//        }
+//        System.out.println("---------------------------------------------");
+        String key = new String(payload, 0, 5);
         tcpSender.sendData(payload);
-        sentData.add(payload);
+        sentData.put(key, payload);
+        sentCount.getAndIncrement();
     }
 
     public static void main(String[] args) {
@@ -69,13 +82,27 @@ public class Client {
         int port = Integer.parseInt(args[1]);
         int msgRate = Integer.parseInt(args[2]);
 
+        for(int i = 0; i < 100; i++){
         try {
             Client client = new Client(hostName, port, msgRate);
             client.init();
-            client.sendMessage();
+            Thread t = new Thread(client);
+            t.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        }
 
+    }
+
+    @Override
+    public void run() {
+        for(int i = 0; i < 10; i ++){
+            try {
+                sendMessage();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
