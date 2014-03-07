@@ -74,7 +74,7 @@ public class Client implements Runnable{
 
     public static void main(String[] args) {
         if (args.length < 3) {
-            LoggingUtil.logError("Required arguments are missing. Expected format " +
+            LoggingUtil.logError(Client.class, "Required arguments are missing. Expected format " +
                     "\'java cs455.scaling.client.Client server-host server-port message-rate\' \n");
         }
 

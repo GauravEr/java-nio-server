@@ -12,8 +12,17 @@ public class ScaleUtil {
 
     private static Random random = new Random(System.currentTimeMillis());
 
-    public static InetAddress getHostInetAddress() throws UnknownHostException {
-        InetAddress inetAddr = InetAddress.getLocalHost();
+    public static InetAddress getHostInetAddress() {
+        InetAddress inetAddr = null;
+        try {
+            inetAddr = InetAddress.getLocalHost();
+        } catch (UnknownHostException e) {
+            try {
+                inetAddr = InetAddress.getByName("localhost");
+            } catch (UnknownHostException ignore) {
+
+            }
+        }
         return inetAddr;
     }
 

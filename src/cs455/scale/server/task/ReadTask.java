@@ -1,8 +1,6 @@
 package cs455.scale.server.task;
 
-import cs455.scale.server.BufferManager;
-import cs455.scale.server.Server;
-import cs455.scale.server.ServerChannelChange;
+import cs455.scale.server.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -19,7 +17,7 @@ public class ReadTask extends AbstractTask {
     private final Server server;
 
     public ReadTask(SelectionKey selectionKey, Server server) {
-        super(selectionKey,server);
+        super(selectionKey, server);
         this.selectionKey = selectionKey;
         this.server = server;
     }
@@ -30,51 +28,38 @@ public class ReadTask extends AbstractTask {
         System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
-        try {
-            ByteBuffer byteBuffer = bufferManager.getBuffer(socketChannel);
+        ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
+        ByteBuffer byteBuffer = extendedBuffer.getByteBuffer();
+        synchronized (extendedBuffer) {
+            if (extendedBuffer.isReadable()) {
+                try {
+                    int bytesRead = socketChannel.read(byteBuffer);
+                    if (bytesRead == -1) {
+                        socketChannel.close();
+                        selectionKey.cancel();
+                        return;
+                    }
 
-
-
-            int bytesRead = socketChannel.read(byteBuffer);
-
-            byte[] dataArray1 = byteBuffer.array();
-            /*System.out.println("After reading ----------------------------------");
-            for(int i = 0; i < dataArray1.length; i++){
-                System.out.print(dataArray1[i] + ",");
-            }*/
-
-//            System.out.println("Bytes Read: " + bytesRead + ", has remaining " + byteBuffer.hasRemaining());
-            if(bytesRead == -1){
-                socketChannel.close();
-                selectionKey.cancel();
-                return;
-            }
-//            System.out.println("[" + jobId + "] After Reading: " + byteBuffer.position() + ", " + byteBuffer.limit());
-
-            if(!byteBuffer.hasRemaining()){ // we have read 8k of data
-//                System.out.println("[" + jobId + "] Before Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
-
-                byteBuffer.flip();
-//                System.out.println("[" + jobId + "] After Flipping: " + byteBuffer.position() + ", " + byteBuffer.limit());
-
-               /* byte[] dataArray = byteBuffer.array();
-                System.out.println("last bytes----------------------------------");
-                for(int i = 0; i < dataArray.length; i++){
-                    System.out.print(dataArray[i] + ",");
+                    if (!byteBuffer.hasRemaining()) { // we have read 8k of data
+                        byteBuffer.flip();
+                        extendedBuffer.setWritable();
+                        ServerChannelChange serverChannelChange =
+                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
+                        server.addChannelChange(serverChannelChange);
+                    }
+                } catch (IOException e) {
+                    try {
+                        e.printStackTrace();
+                        System.out.println("Cancelling Read key.");
+                        socketChannel.close();
+                        selectionKey.cancel();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                 }
-                System.out.println("---------------------------------------------");*/
-                ServerChannelChange serverChannelChange =
-                        new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
-                server.addChannelChange(serverChannelChange);
             }
-        } catch (IOException e) {
-            try {
-                e.printStackTrace();
-                System.out.println("Cancelling Read key.");
-                socketChannel.close();
-                selectionKey.cancel();
-            } catch (IOException e1) {
-                e1.printStackTrace();
+            else {
+                JobQueue.getInstance().addJob(this);
             }
         }
     }

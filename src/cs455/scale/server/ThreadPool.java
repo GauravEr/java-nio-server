@@ -63,7 +63,7 @@ public class ThreadPool extends Thread {
                 countDownLatch.await();
                 initialized = true;
             } catch (InterruptedException e) {
-                LoggingUtil.logError("Error starting the thread pool.", e);
+                LoggingUtil.logError(this.getClass(), "Error starting the thread pool.", e);
                 return false;
             }
             return true;
@@ -79,11 +79,6 @@ public class ThreadPool extends Thread {
     public void acknowledgeCompletion(Worker worker){
         idleThreads.add(worker);
         completedJobCount.incrementAndGet();
-    }
-
-    public void printStatistics(){
-        LoggingUtil.logInfo("Submitted Jobs: " + submittedJobCount);
-        LoggingUtil.logInfo("Completed Jobs: " + completedJobCount);
     }
 
     @Override

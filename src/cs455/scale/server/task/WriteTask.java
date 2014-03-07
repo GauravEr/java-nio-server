@@ -1,9 +1,6 @@
 package cs455.scale.server.task;
 
-import cs455.scale.server.BufferManager;
-import cs455.scale.server.JobQueue;
-import cs455.scale.server.Server;
-import cs455.scale.server.ServerChannelChange;
+import cs455.scale.server.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -16,44 +13,40 @@ import java.nio.channels.SocketChannel;
  */
 public class WriteTask extends AbstractTask{
 
-    private final ByteBuffer buffer;
+    private final ExtendedBuffer extendedBuffer;
     private final SocketChannel socketChannel;
 
     public WriteTask(SelectionKey key, Server server) {
         super(key, server);
         this.socketChannel = (SocketChannel)key.channel();
-        this.buffer = BufferManager.getInstance().getBuffer(socketChannel);
+        this.extendedBuffer = BufferManager.getInstance().getBuffer(socketChannel);
     }
 
     @Override
     public void complete() {
-//        System.out.println(jobId + "->" + this.getClass());
-        // need to implement hashing here
-        try {
-           /* System.out.println("[" + jobId + "] Before Writing: " + buffer.position() + ", " + buffer.limit());
-            System.out.println("[" + jobId + "]Writing Started!");
-            System.out.println("[" + jobId + "]To Be Written: " + (buffer.limit() - buffer.position()));*/
-            socketChannel.write(buffer);
-//            System.out.println("[" + jobId + "]After Writing: " + buffer.position() + ", " + buffer.limit());
-
-            if(buffer.hasRemaining()){
-                JobQueue.getInstance().addJob(this);
-
-            } else {
-//                System.out.println("[" + jobId + "]Writing Completed!");
-                BufferManager.getInstance().deregisterBuffer(socketChannel);
-                ServerChannelChange serverChannelChange =
-                        new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
-                server.addChannelChange(serverChannelChange);
-                //buffer.clear();
-            }
-        } catch (IOException e) {
-            try {
-                System.out.println("[" + jobId + "]Cancelling Write key.");
-                socketChannel.close();
-                selectionKey.cancel();
-            } catch (IOException e1) {
-                e.printStackTrace();
+        synchronized (extendedBuffer) {
+            if (extendedBuffer.isWritable()) {
+                ByteBuffer buffer = extendedBuffer.getByteBuffer();
+                try {
+                    socketChannel.write(buffer);
+                    if(buffer.hasRemaining()){
+                        JobQueue.getInstance().addJob(this);
+                    } else {
+                        buffer.clear();
+                        extendedBuffer.setReadable();
+                        ServerChannelChange serverChannelChange =
+                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
+                        server.addChannelChange(serverChannelChange);
+                    }
+                } catch (IOException e) {
+                    try {
+                        System.out.println("[" + jobId + "]Cancelling Write key.");
+                        socketChannel.close();
+                        selectionKey.cancel();
+                    } catch (IOException e1) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }

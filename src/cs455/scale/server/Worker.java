@@ -29,7 +29,8 @@ public class Worker implements Runnable {
         if(!initialized){
             threadPool.acknowledgeInit(this);
             initialized = true;
-            LoggingUtil.logInfo("Thread [" + Thread.currentThread().getId() + "] started successfully!");
+            LoggingUtil.logInfo(this.getClass(),
+                    "Worker Thread [" + Thread.currentThread().getId() + "] started successfully!");
         }
         while(true){
             if(!jobQueue.isEmpty()){

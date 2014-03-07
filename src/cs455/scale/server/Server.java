@@ -4,8 +4,10 @@ import cs455.scale.server.task.ConnectionAcceptTask;
 import cs455.scale.server.task.ReadTask;
 import cs455.scale.server.task.WriteTask;
 import cs455.scale.util.LoggingUtil;
+import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.SelectionKey;
@@ -24,6 +26,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class Server {
 
     private final int port;
+    private final InetAddress serverAddress;
     private final ThreadPool threadPool;
     private Queue<ServerChannelChange> channelChanges = new ConcurrentLinkedQueue<ServerChannelChange>();
     private Selector selector;
@@ -31,6 +34,7 @@ public class Server {
     public Server(int port, int threadPoolSize) {
         this.port = port;
         this.threadPool = new ThreadPool(threadPoolSize);
+        this.serverAddress = ScaleUtil.getHostInetAddress();
     }
 
     public boolean initialize() throws IOException {
@@ -38,14 +42,14 @@ public class Server {
         return threadPool.initialize();
     }
 
-    public void addChannelChange(ServerChannelChange channelChange){
+    public void addChannelChange(ServerChannelChange channelChange) {
         channelChanges.add(channelChange);
         selector.wakeup();
     }
 
     public static void main(String[] args) {
         if (args.length < 2) {
-            LoggingUtil.logError("Missing required arguments. Expecting " +
+            LoggingUtil.logError(Server.class, "Missing required arguments. Expecting " +
                     "\'java cs455.scaling.server.Server port-num thread-pool-size\'");
             System.exit(-1);
         }
@@ -62,76 +66,80 @@ public class Server {
         }
 
         if (initialized) {
-            LoggingUtil.logInfo("Server started successfully!");
+            try {
+                server.start();
+            } catch (IOException e) {
+                LoggingUtil.logError(Server.class, e.getMessage(), e);
+            }
+        } else {
+            LoggingUtil.logError(Server.class, "Initialization Error. Server startup is terminated.");
+            System.exit(-1);
         }
-
-        server.start();
-
     }
 
-    private void start() {
-        try {
-            ServerSocketChannel ssc = ServerSocketChannel.open();
+    private void start() throws IOException {
+        // create the server socket channel.
+        ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+        // configure it to be non-blocking
+        serverSocketChannel.configureBlocking(false);
+        // get the server socket from the channel
+        ServerSocket serverSocket = serverSocketChannel.socket();
+        // bind it to the server address and the provided port
+        InetSocketAddress inetSocketAddress = new InetSocketAddress(serverAddress, port);
+        serverSocket.bind(inetSocketAddress);
 
-            ssc.configureBlocking(false);
+        LoggingUtil.logInfo(this.getClass(), "Server Started on " + serverAddress.getHostAddress() + ":" + port);
 
-            ServerSocket ss = ssc.socket();
-            InetSocketAddress isa = new InetSocketAddress(port);
-            ss.bind(isa);
+        // register for interest on accepting connections
+        serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-            //Selector selector = Selector.open();
+        JobQueue jobQueue = JobQueue.getInstance();
 
-            ssc.register(selector, SelectionKey.OP_ACCEPT);
-            System.out.println("Listening on port " + port);
-            JobQueue jobQueue = JobQueue.getInstance();
-
-            while(true){
-                // check for changes
-                if(!channelChanges.isEmpty()){
-                    System.out.println("Change size:" + channelChanges.size());
-                    Iterator<ServerChannelChange> changes = channelChanges.iterator();
-                    while (changes.hasNext()) {
-                        ServerChannelChange channelChange = changes.next();
-                        System.out.println("New Interest->" + channelChange.getNewInterest());
-                        channelChange.getChannel().register(selector, channelChange.getNewInterest());
-                        changes.remove();
-                    }
+        while (true) {
+            // check for changes
+            if (!channelChanges.isEmpty()) {
+                Iterator<ServerChannelChange> changes = channelChanges.iterator();
+                // Apply the changes
+                while (changes.hasNext()) {
+                    ServerChannelChange channelChange = changes.next();
+                    channelChange.getChannel().register(selector, channelChange.getNewInterest());
+                    changes.remove();
                 }
+            }
 
-                // now check for new keys
-                int num = selector.select();
-                if (num == 0) {
+            // now check for new keys
+            int numOfKeys = selector.select();
+            // no new selected keys. start the loop again.
+            if (numOfKeys == 0) {
+                continue;
+            }
+
+            // get the keys
+            Set keys = selector.selectedKeys();
+            Iterator it = keys.iterator();
+
+            while (it.hasNext()) {
+                SelectionKey key = (SelectionKey) it.next();
+                it.remove();
+                if (!key.isValid()) {
                     continue;
                 }
-
-                Set keys = selector.selectedKeys();
-                Iterator it = keys.iterator();
-
-                while(it.hasNext()){
-                    SelectionKey key = (SelectionKey) it.next();
-                    it.remove();
-                    if(!key.isValid()){
-                        continue;
-                    }
-                    if (key.isAcceptable()) {
-                        System.out.println("key" + key);
-                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                        connAcceptTask.complete();
-                        //jobQueue.addJob(connAcceptTask);
-                    } else if (key.isReadable()) {
-                        ReadTask readTask = new ReadTask(key, this);
-                        readTask.complete();
-                        //jobQueue.addJob(readTask);
-                    } else if (key.isWritable()){
-                        WriteTask writeTask = new WriteTask(key, this);
-                        writeTask.complete();
-                        //jobQueue.addJob(writeTask);
-                    }
+                if (key.isAcceptable()) {
+                    ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
+                    //connAcceptTask.complete();
+                    jobQueue.addJob(connAcceptTask);
+                } else if (key.isReadable()) {
+                    ReadTask readTask = new ReadTask(key, this);
+                    //readTask.complete();
+                    jobQueue.addJob(readTask);
+                } else if (key.isWritable()) {
+                    WriteTask writeTask = new WriteTask(key, this);
+                    //writeTask.complete();
+                    jobQueue.addJob(writeTask);
                 }
-
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
         }
+
     }
 }

@@ -31,7 +31,7 @@ public class ConnectionAcceptTask extends AbstractTask {
                 System.out.println("Connection Accept Completed!");
             }
         } catch (IOException e) {
-            LoggingUtil.logError("Error accepting connection.", e);
+            LoggingUtil.logError(this.getClass(), "Error accepting connection.", e);
         }
     }
 }
