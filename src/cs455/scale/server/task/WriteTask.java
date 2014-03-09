@@ -32,7 +32,7 @@ public class WriteTask extends AbstractTask{
                 // Check if the write buffer is empty.
                 if (writeBuffer.position() == 0) {
                     ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
-                    byte[] receivedData = new byte[1024*8];
+                      byte[] receivedData = new byte[1024*8];
                     readBuffer.get(receivedData);
                     byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
                     System.out.println("Hash Length: " + hashCodeInBytes.length);
@@ -42,7 +42,8 @@ public class WriteTask extends AbstractTask{
                     readBuffer.clear();
                 }
                 try {
-                    socketChannel.write(writeBuffer);
+                    int bytesWritten = socketChannel.write(writeBuffer);
+                    System.out.println("Bytes Written: " + bytesWritten);
                     if(writeBuffer.hasRemaining()){
                         JobQueue.getInstance().addJob(this);
                     } else {

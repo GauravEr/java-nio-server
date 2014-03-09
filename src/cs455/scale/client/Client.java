@@ -53,7 +53,7 @@ public class Client {
             LoggingUtil.logInfo(this.getClass(), "Successfully connected to " + socketAddress);
 
             // start the write worker thread.
-            writeWorker = new WriteWorker(5000/messageRate, socketChannel, this);
+            writeWorker = new WriteWorker(5000 / messageRate, socketChannel, this);
             writeWorker.start();
 
             // start the read worker
@@ -72,7 +72,7 @@ public class Client {
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
             while (true) {
                 // first check for cancelled channels.
-                for(SocketChannel channel: cancelledChannels){
+                for (SocketChannel channel : cancelledChannels) {
                     System.out.println("Cancelling a Channel");
                     SelectionKey selectionKey = channel.keyFor(selector);
                     selectionKey.cancel();
@@ -93,11 +93,11 @@ public class Client {
                     SelectionKey key = (SelectionKey) it.next();
                     it.remove();
 
-                    if(key.isValid() && key.isConnectable()){
+                    if (key.isValid() && key.isConnectable()) {
                         handleConnect(key);
-                    } else if(key.isValid() && key.isReadable()){
+                    } else if (key.isValid() && key.isReadable()) {
                         readWorker.wakeUp();
-                    } else if(key.isValid() && key.isWritable()){
+                    } else if (key.isValid() && key.isWritable()) {
                         writeWorker.wakeUp();
                     }
                 }
@@ -109,23 +109,23 @@ public class Client {
         }
     }
 
-    public void handleConnect(SelectionKey key){
+    public void handleConnect(SelectionKey key) {
         SocketChannel channel = (SocketChannel) key.channel();
-        if(!channel.isConnected()){
-            try {
-                channel.finishConnect();
+        try {
+            if (channel.finishConnect()) {
                 SelectionKey readKey = channel.register(selector, SelectionKey.OP_WRITE);
                 channel.register(selector, readKey.interestOps() | SelectionKey.OP_READ);
-            } catch (IOException e) {
-                LoggingUtil.logError(this.getClass(), "Error when completing connection.", e);
-                try {
-                    channel.close();
-                    key.cancel();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
+            }
+        } catch (IOException e) {
+            LoggingUtil.logError(this.getClass(), "Error when completing connection.", e);
+            try {
+                channel.close();
+                key.cancel();
+            } catch (IOException e1) {
+                e1.printStackTrace();
             }
         }
+
     }
 
     public static void main(String[] args) {
@@ -157,19 +157,19 @@ public class Client {
 
     }
 
-    public void addHashCode(String hashCode){
-        synchronized (hashCodes){
+    public void addHashCode(String hashCode) {
+        synchronized (hashCodes) {
             hashCodes.add(hashCode);
             System.out.println("hash elements: " + hashCodes.size());
         }
     }
 
-    public boolean checkHashCode(String hashCode){
-        synchronized (hashCodes){
+    public boolean checkHashCode(String hashCode) {
+        synchronized (hashCodes) {
             Iterator<String> hashValues = hashCodes.iterator();
-            while (hashValues.hasNext()){
+            while (hashValues.hasNext()) {
                 String storedHash = hashValues.next();
-                if(storedHash.equals(hashCode)){
+                if (storedHash.equals(hashCode)) {
                     hashValues.remove();
                     return true;
                 }
@@ -178,7 +178,7 @@ public class Client {
         return false;
     }
 
-    public void cancelChannel(SocketChannel socketChannel){
+    public void cancelChannel(SocketChannel socketChannel) {
         cancelledChannels.add(socketChannel);
     }
 

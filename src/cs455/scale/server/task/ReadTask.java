@@ -34,6 +34,7 @@ public class ReadTask extends AbstractTask {
             if (extendedBuffer.isReadable()) {
                 try {
                     int bytesRead = socketChannel.read(byteBuffer);
+                    System.out.println("No. of bytes read:" + bytesRead);
                     if (bytesRead == -1) {
                         socketChannel.close();
                         BufferManager.getInstance().deregisterBuffer(socketChannel);
