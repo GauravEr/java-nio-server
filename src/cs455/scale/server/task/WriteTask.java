@@ -1,6 +1,7 @@
 package cs455.scale.server.task;
 
 import cs455.scale.server.*;
+import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,14 +27,26 @@ public class WriteTask extends AbstractTask{
     public void complete() {
         synchronized (extendedBuffer) {
             if (extendedBuffer.isWritable()) {
-                ByteBuffer buffer = extendedBuffer.getByteBuffer();
+                System.out.println("Writing!");
+                ByteBuffer writeBuffer = extendedBuffer.getWriteBuffer();
+                // Check if the write buffer is empty.
+                if (writeBuffer.position() == 0) {
+                    ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
+                    byte[] receivedData = new byte[1024*8];
+                    readBuffer.get(receivedData);
+                    byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
+                    System.out.println("Hash Length: " + hashCodeInBytes.length);
+                    System.out.println("WBuff: Position->" + writeBuffer.position() + ", Limit->" + writeBuffer.limit());
+                    writeBuffer.put(hashCodeInBytes);
+                    writeBuffer.flip();
+                    readBuffer.clear();
+                }
                 try {
-                    System.out.println("Writing!");
-                    socketChannel.write(buffer);
-                    if(buffer.hasRemaining()){
+                    socketChannel.write(writeBuffer);
+                    if(writeBuffer.hasRemaining()){
                         JobQueue.getInstance().addJob(this);
                     } else {
-                        buffer.clear();
+                        writeBuffer.clear();
                         extendedBuffer.setReadable();
                         ServerChannelChange serverChannelChange =
                                 new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
@@ -41,8 +54,8 @@ public class WriteTask extends AbstractTask{
                     }
                 } catch (IOException e) {
                     try {
-                        System.out.println("[" + jobId + "]Cancelling Write key.");
                         socketChannel.close();
+                        BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                     } catch (IOException e1) {
                         e.printStackTrace();

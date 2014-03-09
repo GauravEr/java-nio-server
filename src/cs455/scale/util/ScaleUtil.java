@@ -1,7 +1,10 @@
 package cs455.scale.util;
 
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Random;
 
 /**
@@ -30,6 +33,21 @@ public class ScaleUtil {
         byte[] payload = new byte[1024*8];
         random.nextBytes(payload);
         return payload;
+    }
+
+    public static byte[] SHA1FromBytes(byte[] bytes) {
+        MessageDigest digest = null;
+        try {
+            digest = MessageDigest.getInstance("SHA1");
+        } catch (NoSuchAlgorithmException e) {
+            LoggingUtil.logError(ScaleUtil.class, "Error generating the hash", e);
+        }
+        return digest.digest(bytes);
+    }
+
+    public static String hexStringFromBytes(byte[] bytes){
+        BigInteger bigInteger = new BigInteger(1, bytes);
+        return bigInteger.toString();
     }
 
 }

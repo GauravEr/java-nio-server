@@ -32,4 +32,7 @@ public class BufferManager {
         }
         return extendedBuffer;
     }
+    public synchronized void deregisterBuffer(SocketChannel socketChannel){
+        bufferMap.remove(socketChannel);
+    }
 }

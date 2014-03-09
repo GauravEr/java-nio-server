@@ -9,11 +9,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class ExtendedBuffer {
 
-    private ByteBuffer byteBuffer =  ByteBuffer.allocate(1024*8);
+    private ByteBuffer readBuffer =  ByteBuffer.allocate(1024*8);
+    private ByteBuffer writeBuffer = ByteBuffer.allocate(20);
     private volatile AtomicBoolean readReady = new AtomicBoolean(true);
 
-    public ByteBuffer getByteBuffer(){
-        return byteBuffer;
+    public ByteBuffer getReadBuffer(){
+        return readBuffer;
     }
 
     public void setWritable(){
@@ -32,4 +33,7 @@ public class ExtendedBuffer {
         return !isReadable();
     }
 
+    public ByteBuffer getWriteBuffer() {
+        return writeBuffer;
+    }
 }

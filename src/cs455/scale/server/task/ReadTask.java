@@ -29,19 +29,21 @@ public class ReadTask extends AbstractTask {
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
         ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
-        ByteBuffer byteBuffer = extendedBuffer.getByteBuffer();
+        ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
         synchronized (extendedBuffer) {
             if (extendedBuffer.isReadable()) {
                 try {
                     int bytesRead = socketChannel.read(byteBuffer);
                     if (bytesRead == -1) {
                         socketChannel.close();
+                        BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                         return;
                     }
 
                     if (!byteBuffer.hasRemaining()) { // we have read 8k of data
                         byteBuffer.flip();
+                        System.out.println("Completed reading on message!");
                         extendedBuffer.setWritable();
                         ServerChannelChange serverChannelChange =
                                 new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
@@ -52,6 +54,7 @@ public class ReadTask extends AbstractTask {
                         e.printStackTrace();
                         System.out.println("Cancelling Read key.");
                         socketChannel.close();
+                        BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                     } catch (IOException e1) {
                         e1.printStackTrace();

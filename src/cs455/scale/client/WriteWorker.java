@@ -15,10 +15,12 @@ public class WriteWorker extends Thread {
     private final int sleepInterval;
     private final SocketChannel socketChannel;
     private ByteBuffer byteBuffer;
+    private final Client client;
 
-    public WriteWorker(int sleepInterval, SocketChannel channel) {
+    public WriteWorker(int sleepInterval, SocketChannel channel, Client client) {
         this.sleepInterval = sleepInterval;
         this.socketChannel = channel;
+        this.client = client;
         byteBuffer = ByteBuffer.allocate(1024 * 8);
     }
 
@@ -29,28 +31,28 @@ public class WriteWorker extends Thread {
                 try {
                     wait();
                     if (byteBuffer.position() == 0) {
-                        byte[] payload = ScaleUtil.getPayLoad();
-
-                        System.out.println("--> Sent 10 bytes");
-                        for(int i = 0; i < 10; i++){
-                            System.out.print(payload[i] + ", ");
-                        }
-                        System.out.println("---------------");
-
+                        final byte[] payload = ScaleUtil.getPayLoad();
+                        final String hashCode = ScaleUtil.hexStringFromBytes(ScaleUtil.SHA1FromBytes(payload));
+                        client.addHashCode(hashCode);
+                        System.out.println("Added hash code: " + hashCode);
                         byteBuffer.put(payload);
                         byteBuffer.flip();
                     }
-                    System.out.println("Position:" + byteBuffer.position() + ", Limit:" + byteBuffer.limit());
-                    int count = socketChannel.write(byteBuffer);
+                    socketChannel.write(byteBuffer);
                     if (!byteBuffer.hasRemaining()) {
                         byteBuffer.clear();
                     }
-                    System.out.println("No. of bytes written: " + count);
+                    // ensure the message rate
                     Thread.sleep(sleepInterval);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    try {
+                        socketChannel.close();
+                        client.cancelChannel(socketChannel);
+                    } catch (IOException ignore) {
+
+                    }
                 }
             }
         }

@@ -10,8 +10,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Author: Thilina
@@ -26,12 +26,15 @@ public class Client {
     private SocketChannel socketChannel;
     private WriteWorker writeWorker;
     private ReadWorker readWorker;
+    private List<String> hashCodes = new LinkedList<String>();
+    private final Queue<SocketChannel> cancelledChannels = new ConcurrentLinkedQueue<SocketChannel>();
 
     public Client(String serverHost, int serverPort, int messageRate) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
         this.messageRate = messageRate;
     }
+
 
     public boolean initialize() {
         try {
@@ -50,11 +53,11 @@ public class Client {
             LoggingUtil.logInfo(this.getClass(), "Successfully connected to " + socketAddress);
 
             // start the write worker thread.
-            writeWorker = new WriteWorker(5000/messageRate, socketChannel);
+            writeWorker = new WriteWorker(5000/messageRate, socketChannel, this);
             writeWorker.start();
 
             // start the read worker
-            readWorker = new ReadWorker(socketChannel);
+            readWorker = new ReadWorker(socketChannel, this);
             readWorker.start();
         } catch (IOException e) {
             LoggingUtil.logError(this.getClass(), "Error initializing the socket channel.", e);
@@ -68,6 +71,13 @@ public class Client {
             // register for connect.
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
             while (true) {
+                // first check for cancelled channels.
+                for(SocketChannel channel: cancelledChannels){
+                    System.out.println("Cancelling a Channel");
+                    SelectionKey selectionKey = channel.keyFor(selector);
+                    selectionKey.cancel();
+                }
+
                 // now check for new keys
                 int numOfKeys = selector.select();
                 // no new selected keys. start the loop again.
@@ -141,6 +151,30 @@ public class Client {
 
         client.start();
 
+    }
+
+    public void addHashCode(String hashCode){
+        synchronized (hashCodes){
+            hashCodes.add(hashCode);
+        }
+    }
+
+    public boolean checkHashCode(String hashCode){
+        synchronized (hashCodes){
+            Iterator<String> hashValues = hashCodes.iterator();
+            while (hashValues.hasNext()){
+                String storedHash = hashValues.next();
+                if(storedHash.equals(hashCode)){
+                    hashValues.remove();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void cancelChannel(SocketChannel socketChannel){
+        cancelledChannels.add(socketChannel);
     }
 
 }
