@@ -38,7 +38,7 @@ public class ThreadPool{
                 synchronized (jobQueue) {
                     if (jobQueue.hasJobs()) {
                         task = jobQueue.getNextJob();
-                        System.out.println("Got the job" + task.getClass());
+                        //System.out.println("Got the job" + task.getClass());
                     } else {
                         try {
                             jobQueue.wait();
