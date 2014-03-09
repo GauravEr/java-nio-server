@@ -24,8 +24,8 @@ public class ReadTask extends AbstractTask {
 
     @Override
     public void complete() {
-        System.out.println(jobId + "->" + this.getClass());
-        System.out.println("Reading Started!");
+        //System.out.println(jobId + "->" + this.getClass());
+        //System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
         ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
