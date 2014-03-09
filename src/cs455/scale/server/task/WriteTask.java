@@ -58,7 +58,7 @@ public class WriteTask extends AbstractTask{
                         BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                     } catch (IOException e1) {
-                        e.printStackTrace();
+                        //e.printStackTrace();
                     }
                 }
             }

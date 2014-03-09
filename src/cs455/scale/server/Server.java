@@ -96,47 +96,51 @@ public class Server {
         JobQueue jobQueue = JobQueue.getInstance();
 
         while (true) {
-            // check for changes
-            if (!channelChanges.isEmpty()) {
-                Iterator<ServerChannelChange> changes = channelChanges.iterator();
-                // Apply the changes
-                while (changes.hasNext()) {
-                    ServerChannelChange channelChange = changes.next();
-                    channelChange.getChannel().register(selector, channelChange.getNewInterest());
-                    changes.remove();
+            try {
+                // check for changes
+                if (!channelChanges.isEmpty()) {
+                    Iterator<ServerChannelChange> changes = channelChanges.iterator();
+                    // Apply the changes
+                    while (changes.hasNext()) {
+                        ServerChannelChange channelChange = changes.next();
+                        channelChange.getChannel().register(selector, channelChange.getNewInterest());
+                        changes.remove();
+                    }
                 }
-            }
 
-            // now check for new keys
-            int numOfKeys = selector.select();
-            // no new selected keys. start the loop again.
-            if (numOfKeys == 0) {
-                continue;
-            }
-
-            // get the keys
-            Set keys = selector.selectedKeys();
-            Iterator it = keys.iterator();
-
-            while (it.hasNext()) {
-                SelectionKey key = (SelectionKey) it.next();
-                it.remove();
-                if (!key.isValid()) {
+                // now check for new keys
+                int numOfKeys = selector.select();
+                // no new selected keys. start the loop again.
+                if (numOfKeys == 0) {
                     continue;
                 }
-                if (key.isAcceptable()) {
-                    ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                    //connAcceptTask.complete();
-                    jobQueue.addJob(connAcceptTask);
-                } else if (key.isReadable()) {
-                    ReadTask readTask = new ReadTask(key, this);
-                    //readTask.complete();
-                    jobQueue.addJob(readTask);
-                } else if (key.isWritable()) {
-                    WriteTask writeTask = new WriteTask(key, this);
-                    //writeTask.complete();
-                    jobQueue.addJob(writeTask);
+
+                // get the keys
+                Set keys = selector.selectedKeys();
+                Iterator it = keys.iterator();
+
+                while (it.hasNext()) {
+                    SelectionKey key = (SelectionKey) it.next();
+                    it.remove();
+                    if (!key.isValid()) {
+                        continue;
+                    }
+                    if (key.isAcceptable()) {
+                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
+                        //connAcceptTask.complete();
+                        jobQueue.addJob(connAcceptTask);
+                    } else if (key.isReadable()) {
+                        ReadTask readTask = new ReadTask(key, this);
+                        //readTask.complete();
+                        jobQueue.addJob(readTask);
+                    } else if (key.isWritable()) {
+                        WriteTask writeTask = new WriteTask(key, this);
+                        //writeTask.complete();
+                        jobQueue.addJob(writeTask);
+                    }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
         }

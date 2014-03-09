@@ -51,13 +51,13 @@ public class ReadTask extends AbstractTask {
                     }
                 } catch (IOException e) {
                     try {
-                        e.printStackTrace();
+                        //e.printStackTrace();
                         System.out.println("Cancelling Read key.");
                         socketChannel.close();
                         BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                     } catch (IOException e1) {
-                        e1.printStackTrace();
+                        //e1.printStackTrace();
                     }
                 }
             }

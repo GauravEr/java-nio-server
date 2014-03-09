@@ -24,6 +24,7 @@ public class JobQueue {
     }
 
     public synchronized void addJob(Task task) {
+        System.out.println("A new job is added. " + task.getClass());
         jobs.add(task);
         this.notifyAll();
     }
