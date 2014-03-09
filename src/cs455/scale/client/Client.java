@@ -1,108 +1,146 @@
 package cs455.scale.client;
 
+import cs455.scale.client.blocking.BlockingClient;
 import cs455.scale.util.LoggingUtil;
-import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Author: Thilina
- * Date: 3/2/14
+ * Date: 3/8/14
  */
-public class Client implements Runnable{
+public class Client {
 
-    private String serverHost;
-    private int serverPort;
-    private int messageRate;
-    private Socket socket = null;
-    private TCPSender tcpSender = null;
-    private TCPReceiver tcpReceiver = null;
-    private Map<String, byte[]> sentData = new ConcurrentHashMap<String, byte[]>();
-    private AtomicInteger sentCount = new AtomicInteger(0);
-    private AtomicInteger receivedCount = new AtomicInteger(0);
+    private Selector selector;
+    private final String serverHost;
+    private final int serverPort;
+    private final int messageRate;
+    private SocketChannel socketChannel;
+    private WriteWorker writeWorker;
+    private ReadWorker readWorker;
 
-    public Client(String serverHost, int serverPort, int messageRate) throws IOException {
+    public Client(String serverHost, int serverPort, int messageRate) {
         this.serverHost = serverHost;
         this.serverPort = serverPort;
         this.messageRate = messageRate;
-        socket = new Socket(serverHost, serverPort, ScaleUtil.getHostInetAddress(), 0);
-        tcpSender = new TCPSender(socket);
     }
 
-    public void init() throws IOException {
-        tcpReceiver = new TCPReceiver(socket, new Callback() {
-            @Override
-            public void invoke(byte[] receivedBytes) {
+    public boolean initialize() {
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            LoggingUtil.logError(this.getClass(), "Error opening the selector.", e);
+            return false;
+        }
+        try {
+            // create the socket channel.
+            socketChannel = SocketChannel.open();
+            // configure it to be non-blocking
+            socketChannel.configureBlocking(false);
+            SocketAddress socketAddress = new InetSocketAddress(serverHost, serverPort);
+            socketChannel.connect(socketAddress);
+            LoggingUtil.logInfo(this.getClass(), "Successfully connected to " + socketAddress);
 
-               // System.out.println("Received data:");
-                /*for (int i = 0; i < data.length; i++) {
-                    System.out.print(data[i] + ",");
+            // start the write worker thread.
+            writeWorker = new WriteWorker(5000/messageRate, socketChannel);
+            writeWorker.start();
 
-                }*/
-                String key = new String(receivedBytes, 0, 5);
-                byte[] sentBytes = sentData.get(key);
-                if(!Arrays.equals(receivedBytes, sentBytes)){
-                    System.out.println("Data Corruption!");
-                } else {
-                    receivedCount.getAndIncrement();
-                    System.out.println("[" + Thread.currentThread().getId() + "] " + "Sent: " + sentCount.get()
-                    + ", Received: " + receivedCount.get());
+            // start the read worker
+            readWorker = new ReadWorker(socketChannel);
+            readWorker.start();
+        } catch (IOException e) {
+            LoggingUtil.logError(this.getClass(), "Error initializing the socket channel.", e);
+            return false;
+        }
+        return true;
+    }
+
+    public void start() {
+        try {
+            // register for connect.
+            socketChannel.register(selector, SelectionKey.OP_CONNECT);
+            while (true) {
+                // now check for new keys
+                int numOfKeys = selector.select();
+                // no new selected keys. start the loop again.
+                if (numOfKeys == 0) {
+                    continue;
+                }
+
+                // get the keys
+                Set keys = selector.selectedKeys();
+                Iterator it = keys.iterator();
+
+                while (it.hasNext()) {
+                    SelectionKey key = (SelectionKey) it.next();
+                    it.remove();
+                    if (!key.isValid()) {
+                        continue;
+                    }
+                    if(key.isConnectable()){
+                        handleConnect(key);
+                    } else if(key.isReadable()){
+                        readWorker.wakeUp();
+                    } else if(key.isWritable()){
+                        writeWorker.wakeUp();
+                    }
                 }
             }
-        });
-        tcpReceiver.start();
-    }
-
-    public void sendMessage() throws IOException {
-        byte[] payload = ScaleUtil.getPayLoad();
-        //System.out.println("Sent: " + Arrays.toString(payload));
-//        System.out.println("sent data ----------------------------------");
-//        for(int i = 0; i < payload.length; i++){
-//            System.out.print(payload[i] + ",");
-//        }
-//        System.out.println("---------------------------------------------");
-        String key = new String(payload, 0, 5);
-        tcpSender.sendData(payload);
-        sentData.put(key, payload);
-        sentCount.getAndIncrement();
-    }
-
-    public static void main(String[] args) {
-        if (args.length < 3) {
-            LoggingUtil.logError(Client.class, "Required arguments are missing. Expected format " +
-                    "\'java cs455.scaling.client.Client server-host server-port message-rate\' \n");
-        }
-
-        String hostName = args[0];
-        int port = Integer.parseInt(args[1]);
-        int msgRate = Integer.parseInt(args[2]);
-
-        for(int i = 0; i < 100; i++){
-        try {
-            Client client = new Client(hostName, port, msgRate);
-            client.init();
-            Thread t = new Thread(client);
-            t.start();
+        } catch (ClosedChannelException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        }
-
     }
 
-    @Override
-    public void run() {
-        for(int i = 0; i < 10; i ++){
+    public void handleConnect(SelectionKey key){
+        SocketChannel channel = (SocketChannel) key.channel();
+        if(!channel.isConnected()){
             try {
-                sendMessage();
+                channel.finishConnect();
+                SelectionKey readKey = channel.register(selector, SelectionKey.OP_WRITE);
+                channel.register(selector, readKey.interestOps() | SelectionKey.OP_READ);
             } catch (IOException e) {
-                e.printStackTrace();
+                LoggingUtil.logError(this.getClass(), "Error when completing connection.", e);
             }
         }
     }
+
+    public static void main(String[] args) {
+        // Check if the required arguments are provided.
+        if (args.length < 3) {
+            if (args.length < 3) {
+                LoggingUtil.logError(BlockingClient.class, "Required arguments are missing. Expected format " +
+                        "\'java cs455.scaling.client.BlockingClient server-host server-port message-rate\' \n");
+                System.exit(-1);
+            }
+        }
+
+        // parse the input arguments.
+        String serverHost = args[0];
+        int port = Integer.parseInt(args[1]);
+        int messageRate = Integer.parseInt(args[2]);
+
+        // Create the client instance and initialize
+        Client client = new Client(serverHost, port, messageRate);
+        boolean initStatus = client.initialize();
+
+        // Check the initialization status.
+        if (!initStatus) {
+            LoggingUtil.logError(client.getClass(), "Client initialization Failed!");
+            System.exit(-1);
+        }
+
+        client.start();
+
+    }
+
 }

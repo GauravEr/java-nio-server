@@ -28,6 +28,7 @@ public class WriteTask extends AbstractTask{
             if (extendedBuffer.isWritable()) {
                 ByteBuffer buffer = extendedBuffer.getByteBuffer();
                 try {
+                    System.out.println("Writing!");
                     socketChannel.write(buffer);
                     if(buffer.hasRemaining()){
                         JobQueue.getInstance().addJob(this);
