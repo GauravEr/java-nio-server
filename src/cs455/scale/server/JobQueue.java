@@ -34,9 +34,13 @@ public class JobQueue {
 
     public Task getNextJob() {
         if (!jobs.isEmpty()) {
-            return jobs.remove();
+            return jobs.peek();
         }
         return null;
+    }
+
+    public synchronized void remove(Task task){
+        jobs.remove(task);
     }
 
 }

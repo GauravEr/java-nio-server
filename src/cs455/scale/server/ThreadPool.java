@@ -53,6 +53,7 @@ public class ThreadPool{
                         System.out.println("Schuedled the job" + task.getClass());
                         Worker worker = idleThreads.remove();
                         worker.addJob(task);
+                        jobQueue.remove(task);
                     }
                 }
             }
