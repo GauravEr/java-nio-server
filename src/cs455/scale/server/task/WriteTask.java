@@ -48,9 +48,9 @@ public class WriteTask extends AbstractTask{
                     } else {
                         writeBuffer.clear();
                         extendedBuffer.setReadable();
-                        ServerChannelChange serverChannelChange =
-                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
-                        server.addChannelChange(serverChannelChange);
+//                        ServerChannelChange serverChannelChange =
+//                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
+//                        server.addChannelChange(serverChannelChange);
                     }
                 } catch (IOException e) {
                     try {

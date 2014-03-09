@@ -45,9 +45,9 @@ public class ReadTask extends AbstractTask {
                         byteBuffer.flip();
                         System.out.println("Completed reading on message!");
                         extendedBuffer.setWritable();
-                        ServerChannelChange serverChannelChange =
-                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
-                        server.addChannelChange(serverChannelChange);
+//                        ServerChannelChange serverChannelChange =
+//                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
+//                        server.addChannelChange(serverChannelChange);
                     }
                 } catch (IOException e) {
                     try {

@@ -18,8 +18,8 @@ public class ScaleUtil {
     public static InetAddress getHostInetAddress() {
         InetAddress inetAddr = null;
         try {
-            inetAddr = InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
+            inetAddr = InetAddress.getLoopbackAddress();
+        } catch (Throwable e) {
             try {
                 inetAddr = InetAddress.getByName("localhost");
             } catch (UnknownHostException ignore) {

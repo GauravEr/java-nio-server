@@ -23,8 +23,13 @@ public class JobQueue {
         return instance;
     }
 
-    public void addJob(Task task) {
+    public synchronized void addJob(Task task) {
         jobs.add(task);
+        this.notifyAll();
+    }
+
+    public synchronized boolean hasJobs(){
+        return !jobs.isEmpty();
     }
 
     public Task getNextJob() {

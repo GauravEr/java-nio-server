@@ -14,10 +14,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * Author: Thilina
  * Date: 2/27/14
  */
-public class ThreadPool extends Thread {
+public class ThreadPool{
 
     private final int size;
     private final List<Thread> workers;
+    private final ThreadPoolManager threadPoolManager;
     private final CountDownLatch countDownLatch;
     private volatile boolean initialized;
     private Queue<Worker> idleThreads;
@@ -26,37 +27,52 @@ public class ThreadPool extends Thread {
     private AtomicLong submittedJobCount = new AtomicLong();
     private AtomicLong completedJobCount = new AtomicLong();
 
-   /* class StatisticsThread implements Runnable {
+    private class ThreadPoolManager extends Thread {
 
         @Override
         public void run() {
-            while(true){
-                printStatistics();
-                try {
-                    Thread.sleep(5*1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            JobQueue jobQueue = JobQueue.getInstance();
+            // run scheduling
+            while (true) {
+                Task task = null;
+                synchronized (jobQueue) {
+                    if (jobQueue.hasJobs()) {
+                        task = jobQueue.getNextJob();
+                    } else {
+                        try {
+                            jobQueue.wait();
+                            if (jobQueue.hasJobs()) {
+                                task = jobQueue.getNextJob();
+                            }
+                        } catch (InterruptedException e) {
+                            continue;
+                        }
+                    }
+                    if (!idleThreads.isEmpty()) {
+                        Worker worker = idleThreads.remove();
+                        worker.addJob(task);
+                    }
                 }
             }
         }
-    }*/
-    //private StatisticsThread statisticsThread = new StatisticsThread();
+    }
 
     public ThreadPool(int size) {
         this.size = size;
         countDownLatch = new CountDownLatch(size);
         workers = new ArrayList<Thread>(size);
         idleThreads = new ConcurrentLinkedQueue<Worker>();
+        threadPoolManager = new ThreadPoolManager();
     }
 
-    public boolean initialize(){
-        this.start();
+    public boolean initialize() {
+        threadPoolManager.start();
         //new Thread(statisticsThread).start();
-        for(int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             workers.add(new Thread(new Worker(this)));
         }
         if (!initialized) {
-            for(Thread t : workers){
+            for (Thread t : workers) {
                 t.start();
             }
             try {
@@ -71,26 +87,14 @@ public class ThreadPool extends Thread {
         return false;
     }
 
-    public void acknowledgeInit(Worker worker){
+    public void acknowledgeInit(Worker worker) {
         countDownLatch.countDown();
         idleThreads.add(worker);
     }
 
-    public void acknowledgeCompletion(Worker worker){
+    public void acknowledgeCompletion(Worker worker) {
         idleThreads.add(worker);
         completedJobCount.incrementAndGet();
     }
 
-    @Override
-    public void run() {
-        JobQueue jobQueue = JobQueue.getInstance();
-        // run scheduling
-        while (true){
-            Task task = jobQueue.getNextJob();
-            if(task != null && !idleThreads.isEmpty()){
-                Worker worker = idleThreads.remove();
-                worker.addJob(task);
-            }
-        }
-    }
 }

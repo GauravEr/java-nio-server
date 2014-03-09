@@ -92,14 +92,12 @@ public class Client {
                 while (it.hasNext()) {
                     SelectionKey key = (SelectionKey) it.next();
                     it.remove();
-                    if (!key.isValid()) {
-                        continue;
-                    }
-                    if(key.isConnectable()){
+
+                    if(key.isValid() && key.isConnectable()){
                         handleConnect(key);
-                    } else if(key.isReadable()){
+                    } else if(key.isValid() && key.isReadable()){
                         readWorker.wakeUp();
-                    } else if(key.isWritable()){
+                    } else if(key.isValid() && key.isWritable()){
                         writeWorker.wakeUp();
                     }
                 }
@@ -120,6 +118,12 @@ public class Client {
                 channel.register(selector, readKey.interestOps() | SelectionKey.OP_READ);
             } catch (IOException e) {
                 LoggingUtil.logError(this.getClass(), "Error when completing connection.", e);
+                try {
+                    channel.close();
+                    key.cancel();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
             }
         }
     }
@@ -156,6 +160,7 @@ public class Client {
     public void addHashCode(String hashCode){
         synchronized (hashCodes){
             hashCodes.add(hashCode);
+            System.out.println("hash elements: " + hashCodes.size());
         }
     }
 
