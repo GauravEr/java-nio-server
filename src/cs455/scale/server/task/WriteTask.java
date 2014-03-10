@@ -26,6 +26,7 @@ public class WriteTask extends AbstractTask{
     @Override
     public void complete() {
         //synchronized (extendedBuffer) {
+            System.out.println("isWritable->" + extendedBuffer.isWritable());
             if (extendedBuffer.isWritable()) {
                 System.out.println("Writing!");
                 ByteBuffer writeBuffer = extendedBuffer.getWriteBuffer();
