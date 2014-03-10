@@ -30,7 +30,7 @@ public class ReadTask extends AbstractTask {
         BufferManager bufferManager = BufferManager.getInstance();
         ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
         ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
-        synchronized (extendedBuffer) {
+        //synchronized (extendedBuffer) {
             if (extendedBuffer.isReadable()) {
                 try {
                     int bytesRead = socketChannel.read(byteBuffer);
@@ -65,6 +65,6 @@ public class ReadTask extends AbstractTask {
             else {
                 JobQueue.getInstance().addJob(this);
             }
-        }
+        //}
     }
 }

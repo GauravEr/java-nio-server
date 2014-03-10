@@ -131,12 +131,12 @@ public class Server {
                         jobQueue.addJob(connAcceptTask);
                     } else if (key.isReadable()) {
                         ReadTask readTask = new ReadTask(key, this);
-                        //readTask.complete();
-                        jobQueue.addJob(readTask);
+                        readTask.complete();
+                        //jobQueue.addJob(readTask);
                     } else if (key.isWritable()) {
                         WriteTask writeTask = new WriteTask(key, this);
-                        //writeTask.complete();
-                        jobQueue.addJob(writeTask);
+                        writeTask.complete();
+                        //jobQueue.addJob(writeTask);
                     }
                 }
             } catch (Exception e) {
