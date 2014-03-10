@@ -127,8 +127,8 @@ public class Server {
                     }
                     if (key.isAcceptable()) {
                         ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                        //connAcceptTask.complete();
-                        jobQueue.addJob(connAcceptTask);
+                        connAcceptTask.complete();
+                        //jobQueue.addJob(connAcceptTask);
                     } else if (key.isReadable()) {
                         ReadTask readTask = new ReadTask(key, this);
                         readTask.complete();
