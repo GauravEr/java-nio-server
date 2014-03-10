@@ -132,6 +132,7 @@ public class Server {
                         connAcceptTask.complete();
                         //jobQueue.addJob(connAcceptTask);
                     } else if (key.isReadable()) {
+                        System.out.println("Read ready!");
                         ReadTask readTask = new ReadTask(key, this);
                         readTask.complete();
                         //jobQueue.addJob(readTask);
