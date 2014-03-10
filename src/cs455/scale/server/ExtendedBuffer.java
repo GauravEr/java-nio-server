@@ -19,10 +19,12 @@ public class ExtendedBuffer {
 
     public void setWritable(){
         readReady.set(false);
+        System.out.println("Readable:" + readReady.get());
     }
 
     public void setReadable(){
         readReady.set(true);
+        System.out.println("Readable:" + readReady.get());
     }
 
     public boolean isReadable(){
