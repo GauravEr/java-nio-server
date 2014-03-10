@@ -27,8 +27,9 @@ public class ReadTask extends AbstractTask {
         //System.out.println(jobId + "->" + this.getClass());
         //System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-        BufferManager bufferManager = BufferManager.getInstance();
-        ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
+        //BufferManager bufferManager = BufferManager.getInstance();
+        //ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
+        ExtendedBuffer extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
         ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
         //synchronized (extendedBuffer) {
             if (extendedBuffer.isReadable()) {

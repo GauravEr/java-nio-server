@@ -20,7 +20,7 @@ public class WriteTask extends AbstractTask{
     public WriteTask(SelectionKey key, Server server) {
         super(key, server);
         this.socketChannel = (SocketChannel)key.channel();
-        this.extendedBuffer = BufferManager.getInstance().getBuffer(socketChannel);
+        this.extendedBuffer = (ExtendedBuffer) key.attachment();
     }
 
     @Override

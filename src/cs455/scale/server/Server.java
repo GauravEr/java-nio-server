@@ -103,7 +103,8 @@ public class Server {
                     // Apply the changes
                     while (changes.hasNext()) {
                         ServerChannelChange channelChange = changes.next();
-                        channelChange.getChannel().register(selector, channelChange.getNewInterest());
+                        ExtendedBuffer extBuffer = new ExtendedBuffer();
+                        channelChange.getChannel().register(selector, channelChange.getNewInterest(), extBuffer);
                         changes.remove();
                     }
                 }
