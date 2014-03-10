@@ -49,7 +49,7 @@ public class ThreadPool{
                             continue;
                         }
                     }
-                    if (!idleThreads.isEmpty()) {
+                    if (task != null && !idleThreads.isEmpty()) {
                         //System.out.println("Schuedled the job" + task.getClass());
                         Worker worker = idleThreads.remove();
                         worker.addJob(task);
