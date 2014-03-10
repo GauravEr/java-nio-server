@@ -26,14 +26,14 @@ public class WriteTask extends AbstractTask{
     @Override
     public void complete() {
         //synchronized (extendedBuffer) {
-            System.out.println("isWritable->" + extendedBuffer.isWritable());
+            //System.out.println("isWritable->" + extendedBuffer.isWritable());
             if (extendedBuffer.isWritable()) {
                 System.out.println("Writing!");
                 ByteBuffer writeBuffer = extendedBuffer.getWriteBuffer();
                 // Check if the write buffer is empty.
                 if (writeBuffer.position() == 0) {
                     ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
-                      byte[] receivedData = new byte[1024*8];
+                    byte[] receivedData = new byte[1024*8];
                     readBuffer.get(receivedData);
                     byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
                     System.out.println("Hash Length: " + hashCodeInBytes.length);

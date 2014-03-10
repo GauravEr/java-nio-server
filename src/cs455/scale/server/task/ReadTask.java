@@ -42,7 +42,8 @@ public class ReadTask extends AbstractTask {
                         selectionKey.cancel();
                         return;
                     }
-
+                    System.out.println("Reading task, Position->" + byteBuffer.position() +
+                    ", has remaining -> " + byteBuffer.hasRemaining());
                     if (!byteBuffer.hasRemaining()) { // we have read 8k of data
                         byteBuffer.flip();
                         System.out.println("Completed reading on message!");
