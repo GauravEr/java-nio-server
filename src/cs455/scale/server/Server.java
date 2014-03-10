@@ -126,6 +126,7 @@ public class Server {
                         continue;
                     }
                     if (key.isAcceptable()) {
+                        System.out.println("Connection Accept");
                         ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
                         connAcceptTask.complete();
                         //jobQueue.addJob(connAcceptTask);
@@ -134,6 +135,7 @@ public class Server {
                         readTask.complete();
                         //jobQueue.addJob(readTask);
                     } else if (key.isWritable()) {
+                        System.out.println("Write Ready!");
                         WriteTask writeTask = new WriteTask(key, this);
                         writeTask.complete();
                         //jobQueue.addJob(writeTask);
