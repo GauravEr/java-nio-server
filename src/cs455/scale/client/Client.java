@@ -53,7 +53,7 @@ public class Client {
             LoggingUtil.logInfo(this.getClass(), "Successfully connected to " + socketAddress);
 
             // start the write worker thread.
-            writeWorker = new WriteWorker(5000 / messageRate, socketChannel, this);
+            writeWorker = new WriteWorker(1000/messageRate, socketChannel, this);
             writeWorker.start();
 
             // start the read worker

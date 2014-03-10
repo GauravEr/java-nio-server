@@ -97,6 +97,7 @@ public class ThreadPool{
 
     public void acknowledgeCompletion(Worker worker) {
         idleThreads.add(worker);
+//        System.out.println("idle thread count: " + idleThreads.size());
         completedJobCount.incrementAndGet();
     }
 

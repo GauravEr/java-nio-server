@@ -27,7 +27,7 @@ public class ConnectionAcceptTask extends AbstractTask {
             if (socketChannel != null) {
                 socketChannel.configureBlocking(false);
                 ServerChannelChange serverChannelChange = new ServerChannelChange(
-                        socketChannel, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                        socketChannel, SelectionKey.OP_READ);
                 server.addChannelChange(serverChannelChange);
                 System.out.println("Connection Accept Completed!");
             }

@@ -103,8 +103,8 @@ public class Server {
                     // Apply the changes
                     while (changes.hasNext()) {
                         ServerChannelChange channelChange = changes.next();
-                        ExtendedBuffer extBuffer = new ExtendedBuffer();
-                        channelChange.getChannel().register(selector, channelChange.getNewInterest(), extBuffer);
+                        //ExtendedBuffer extBuffer = new ExtendedBuffer();
+                        channelChange.getChannel().register(selector, channelChange.getNewInterest());
                         changes.remove();
                     }
                 }
@@ -127,20 +127,20 @@ public class Server {
                         continue;
                     }
                     if (key.isAcceptable()) {
-                        System.out.println("Connection Accept");
+                        //System.out.println("Connection Accept");
                         ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                        connAcceptTask.complete();
-                        //jobQueue.addJob(connAcceptTask);
+                        //connAcceptTask.complete();
+                        jobQueue.addJob(connAcceptTask);
                     } else if (key.isReadable()) {
-                        System.out.println("Read ready!");
+                        //System.out.println("Read ready!");
                         ReadTask readTask = new ReadTask(key, this);
-                        readTask.complete();
-                        //jobQueue.addJob(readTask);
+                        //readTask.complete();
+                        jobQueue.addJob(readTask);
                     } else if (key.isWritable()) {
-                        System.out.println("Write Ready!");
+                        //System.out.println("Write Ready!");
                         WriteTask writeTask = new WriteTask(key, this);
-                        writeTask.complete();
-                        //jobQueue.addJob(writeTask);
+                        //writeTask.complete();
+                        jobQueue.addJob(writeTask);
                     }
                 }
             } catch (Exception e) {

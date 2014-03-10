@@ -20,12 +20,12 @@ public class WriteTask extends AbstractTask{
     public WriteTask(SelectionKey key, Server server) {
         super(key, server);
         this.socketChannel = (SocketChannel)key.channel();
-        this.extendedBuffer = (ExtendedBuffer) key.attachment();
+        this.extendedBuffer = BufferManager.getInstance().getBuffer(socketChannel);
     }
 
     @Override
     public void complete() {
-        //synchronized (extendedBuffer) {
+        synchronized (extendedBuffer) {
             //System.out.println("isWritable->" + extendedBuffer.isWritable());
             if (extendedBuffer.isWritable()) {
                 System.out.println("Writing!");
@@ -50,9 +50,9 @@ public class WriteTask extends AbstractTask{
                     } else {
                         writeBuffer.clear();
                         extendedBuffer.setReadable();
-//                        ServerChannelChange serverChannelChange =
-//                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
-//                        server.addChannelChange(serverChannelChange);
+                        ServerChannelChange serverChannelChange =
+                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
+                        server.addChannelChange(serverChannelChange);
                     }
                 } catch (IOException e) {
                     try {
@@ -64,6 +64,6 @@ public class WriteTask extends AbstractTask{
                     }
                 }
             }
-        //}
+        }
     }
 }

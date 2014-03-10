@@ -27,11 +27,11 @@ public class ReadTask extends AbstractTask {
         //System.out.println(jobId + "->" + this.getClass());
         //System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-        //BufferManager bufferManager = BufferManager.getInstance();
-        //ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
-        ExtendedBuffer extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
+        BufferManager bufferManager = BufferManager.getInstance();
+        ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
+        //ExtendedBuffer extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
         ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
-        //synchronized (extendedBuffer) {
+        synchronized (extendedBuffer) {
             if (extendedBuffer.isReadable()) {
                 try {
                     int bytesRead = socketChannel.read(byteBuffer);
@@ -42,16 +42,16 @@ public class ReadTask extends AbstractTask {
                         selectionKey.cancel();
                         return;
                     }
-                    System.out.println("Reading task, Position->" + byteBuffer.position() +
-                    ", has remaining -> " + byteBuffer.hasRemaining());
+//                    System.out.println("Reading task, Position->" + byteBuffer.position() +
+//                    ", has remaining -> " + byteBuffer.hasRemaining());
                     if (!byteBuffer.hasRemaining()) { // we have read 8k of data
                         byteBuffer.flip();
                         System.out.println("Completed reading on message!");
                         extendedBuffer.setWritable();
 
-//                        ServerChannelChange serverChannelChange =
-//                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
-//                        server.addChannelChange(serverChannelChange);
+                        ServerChannelChange serverChannelChange =
+                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
+                        server.addChannelChange(serverChannelChange);
                     }
                 } catch (IOException e) {
                     try {
@@ -68,6 +68,6 @@ public class ReadTask extends AbstractTask {
             else {
                 JobQueue.getInstance().addJob(this);
             }
-        //}
+        }
     }
 }
