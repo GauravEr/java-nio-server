@@ -1,8 +1,10 @@
 package cs455.scale.server.task;
 
 import cs455.scale.server.*;
+import cs455.scale.util.LoggingUtil;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -24,29 +26,27 @@ public class ReadTask extends AbstractTask {
 
     @Override
     public void complete() {
-        //System.out.println(jobId + "->" + this.getClass());
-        //System.out.println("Reading Started!");
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
         BufferManager bufferManager = BufferManager.getInstance();
         ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
-        //ExtendedBuffer extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
         ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
         synchronized (extendedBuffer) {
             if (extendedBuffer.isReadable()) {
                 try {
                     int bytesRead = socketChannel.read(byteBuffer);
-                    //System.out.println("No. of bytes read:" + bytesRead);
+                    // client has terminated the connection
                     if (bytesRead == -1) {
                         socketChannel.close();
                         BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                         return;
                     }
-//                    System.out.println("Reading task, Position->" + byteBuffer.position() +
-//                    ", has remaining -> " + byteBuffer.hasRemaining());
+
                     if (!byteBuffer.hasRemaining()) { // we have read 8k of data
                         byteBuffer.flip();
-                        System.out.println("Completed reading on message!");
+                        Socket socket = socketChannel.socket();
+                        LoggingUtil.logInfo(this.getClass(), "Received a hash from " + socket.getInetAddress().getHostName() +
+                                ":" + socket.getPort());
                         extendedBuffer.setWritable();
 
                         ServerChannelChange serverChannelChange =
@@ -55,17 +55,18 @@ public class ReadTask extends AbstractTask {
                     }
                 } catch (IOException e) {
                     try {
-                        //e.printStackTrace();
-                        System.out.println("Cancelling Read key.");
-                        socketChannel.close();
-                        BufferManager.getInstance().deregisterBuffer(socketChannel);
-                        selectionKey.cancel();
-                    } catch (IOException e1) {
-                        //e1.printStackTrace();
+                        if (selectionKey.isValid() && socketChannel.isOpen()) {
+                            LoggingUtil.logError(this.getClass(), "Closing the client connection.");
+                            socketChannel.close();
+                            BufferManager.getInstance().deregisterBuffer(socketChannel);
+                            selectionKey.cancel();
+                        }
+                    } catch (IOException ignore) {
+
                     }
                 }
             }
-            else {
+            else { // defer the read
                 JobQueue.getInstance().addJob(this);
             }
         }

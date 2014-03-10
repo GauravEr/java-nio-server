@@ -1,9 +1,11 @@
 package cs455.scale.server.task;
 
 import cs455.scale.server.*;
+import cs455.scale.util.LoggingUtil;
 import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -26,25 +28,26 @@ public class WriteTask extends AbstractTask{
     @Override
     public void complete() {
         synchronized (extendedBuffer) {
-            //System.out.println("isWritable->" + extendedBuffer.isWritable());
+
             if (extendedBuffer.isWritable()) {
-                System.out.println("Writing!");
                 ByteBuffer writeBuffer = extendedBuffer.getWriteBuffer();
-                // Check if the write buffer is empty.
+                // Check if the write buffer is empty which means we need to calculate the hash
+                // otherwise it's half written buffer.
                 if (writeBuffer.position() == 0) {
                     ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
                     byte[] receivedData = new byte[1024*8];
                     readBuffer.get(receivedData);
                     byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
-                    System.out.println("Hash Length: " + hashCodeInBytes.length);
-                    System.out.println("WBuff: Position->" + writeBuffer.position() + ", Limit->" + writeBuffer.limit());
+                    Socket socket = socketChannel.socket();
+                    LoggingUtil.logInfo(this.getClass(), "Sending hash " +
+                            ScaleUtil.hexStringFromBytes(hashCodeInBytes) + "to client " +
+                            socket.getInetAddress().getHostName() + ":" + socket.getPort());
                     writeBuffer.put(hashCodeInBytes);
                     writeBuffer.flip();
                     readBuffer.clear();
                 }
                 try {
-                    int bytesWritten = socketChannel.write(writeBuffer);
-                    System.out.println("Bytes Written: " + bytesWritten);
+                    socketChannel.write(writeBuffer);
                     if(writeBuffer.hasRemaining()){
                         JobQueue.getInstance().addJob(this);
                     } else {
@@ -56,11 +59,12 @@ public class WriteTask extends AbstractTask{
                     }
                 } catch (IOException e) {
                     try {
+                        LoggingUtil.logError(this.getClass(), "Closing the client connection.");
                         socketChannel.close();
                         BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
-                    } catch (IOException e1) {
-                        //e.printStackTrace();
+                    } catch (IOException ignore) {
+
                     }
                 }
             }
