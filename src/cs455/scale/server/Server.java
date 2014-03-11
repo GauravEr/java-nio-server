@@ -88,56 +88,50 @@ public class Server {
         JobQueue jobQueue = JobQueue.getInstance();
 
         while (true) {
-            try {
-
-                // now check for new keys
-                int numOfKeys = selector.select();
-                // no new selected keys. start the loop again.
-                if (numOfKeys == 0) {
-                    continue;
-                }
-
-                // get the keys
-                Set keys = selector.selectedKeys();
-                Iterator it = keys.iterator();
-
-                while (it.hasNext()) {
-                    SelectionKey key = (SelectionKey) it.next();
-                    it.remove();
-                    if (!key.isValid()) {
-                        continue;
-                    }
-                    if (key.isAcceptable()) {
-                        try {
-                            System.out.println("New Connection Accept Request!");
-                            SocketChannel socketChannel = ((ServerSocketChannel)key.channel()).accept();
-                            if (socketChannel != null) {
-                                socketChannel.configureBlocking(false);
-                                ExtendedBuffer extendedBuffer = new ExtendedBuffer();
-                                socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE,
-                                        extendedBuffer);
-                                System.out.println("Connection Accept Completed!");
-                            }
-                        } catch (IOException e) {
-                            LoggingUtil.logError(this.getClass(), "Error accepting connection.", e);
-                        }
-                    } else if (key.isReadable()) {
-                        //System.out.println("Read ready!");
-                        ReadTask readTask = new ReadTask(key, this);
-                        //readTask.complete();
-                        jobQueue.addJob(readTask);
-                    } else if (key.isWritable()) {
-                        //System.out.println("Write Ready!");
-                        WriteTask writeTask = new WriteTask(key, this);
-                        //writeTask.complete();
-                        jobQueue.addJob(writeTask);
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            // now check for new keys
+            int numOfKeys = selector.select();
+            // no new selected keys. start the loop again.
+            if (numOfKeys == 0) {
+                continue;
             }
 
-        }
+            // get the keys
+            Set keys = selector.selectedKeys();
+            Iterator it = keys.iterator();
 
+            while (it.hasNext()) {
+                SelectionKey key = (SelectionKey) it.next();
+                it.remove();
+                if (!key.isValid()) {
+                    continue;
+                }
+                if (key.isAcceptable()) {
+                    // Handling accept connections in the selector thread itself.
+                    try {
+                        LoggingUtil.logInfo(this.getClass(), "New Connection Accept Request!");
+                        SocketChannel socketChannel = ((ServerSocketChannel) key.channel()).accept();
+                        if (socketChannel != null) {
+                            // configure it non-blocking
+                            socketChannel.configureBlocking(false);
+                            SocketChannelDataHolder socketChannelDataHolder = new SocketChannelDataHolder();
+                            // register read/write interests
+                            socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE,
+                                    socketChannelDataHolder);
+                            LoggingUtil.logInfo(this.getClass(), "Connection Accept Completed!");
+                        }
+                    } catch (IOException e) {
+                        LoggingUtil.logError(this.getClass(), "Error accepting connection.", e);
+                    }
+                } else if (key.isReadable()) {
+                    // handle read tasks to job queue
+                    ReadTask readTask = new ReadTask(key, this);
+                    jobQueue.addJob(readTask);
+                } else if (key.isWritable()) {
+                    // handle write tasks to job queue
+                    WriteTask writeTask = new WriteTask(key, this);
+                    jobQueue.addJob(writeTask);
+                }
+            }
+        }
     }
 }

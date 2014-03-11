@@ -46,9 +46,14 @@ public class ReadWorker extends Thread {
                         buffer.clear();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    // thread terminating
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    try {
+                        LoggingUtil.logError(this.getClass(), "Error reading from socket channel, closing the channel.");
+                        socketChannel.close();
+                    } catch (IOException ignore) {
+
+                    }
                 }
 
             }

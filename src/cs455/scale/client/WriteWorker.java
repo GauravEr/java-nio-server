@@ -46,12 +46,13 @@ public class WriteWorker extends Thread {
                     // ensure the message rate
                     Thread.sleep(sleepInterval);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    // terminating
                 } catch (IOException e) {
                     try {
+                        LoggingUtil.logError(this.getClass(), "Error writing to socket channel, closing the channel.");
                         socketChannel.close();
                     } catch (IOException ignore) {
-
+                        // ignore
                     }
                 }
             }

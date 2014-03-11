@@ -6,6 +6,7 @@ import java.nio.channels.SelectionKey;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * Abstract task which is extended by Read/Write tasks.
  * Author: Thilina
  * Date: 3/4/14
  */

@@ -2,13 +2,14 @@ package cs455.scale.server;
 
 import cs455.scale.server.task.Task;
 import cs455.scale.util.LoggingUtil;
-import cs455.scale.util.ThreadSafeLinkedQueue;
+import cs455.scale.util.ThreadSafeQueue;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 /**
+ * Thread Pool implementation.
  * Author: Thilina
  * Date: 2/27/14
  */
@@ -19,7 +20,7 @@ public class ThreadPool{
     private final ThreadPoolManager threadPoolManager;
     private final CountDownLatch countDownLatch;
     private volatile boolean initialized;
-    private ThreadSafeLinkedQueue<Worker> idleThreads;
+    private ThreadSafeQueue<Worker> idleThreads;
 
 
     private class ThreadPoolManager extends Thread {
@@ -35,6 +36,7 @@ public class ThreadPool{
                         task = jobQueue.getNextJob();
                     } else {
                         try {
+                            // wait till a job arrives
                             jobQueue.wait();
                             if (jobQueue.hasJobs()) {
                                 task = jobQueue.getNextJob();
@@ -43,6 +45,7 @@ public class ThreadPool{
                             continue;
                         }
                     }
+                    // job is available, schedule it only if free-threads available
                     if (task != null && !idleThreads.isEmpty()) {
                         Worker worker = idleThreads.remove();
                         worker.addJob(task);
@@ -57,7 +60,7 @@ public class ThreadPool{
         this.size = size;
         countDownLatch = new CountDownLatch(size);
         workers = new ArrayList<Thread>(size);
-        idleThreads = new ThreadSafeLinkedQueue<Worker>();
+        idleThreads = new ThreadSafeQueue<Worker>();
         threadPoolManager = new ThreadPoolManager();
     }
 
@@ -67,10 +70,12 @@ public class ThreadPool{
             workers.add(new Thread(new Worker(this)));
         }
         if (!initialized) {
+            // start all threads in the thread-pool
             for (Thread t : workers) {
                 t.start();
             }
             try {
+                // wait till all the threads are started up.
                 countDownLatch.await();
                 initialized = true;
             } catch (InterruptedException e) {
@@ -82,11 +87,19 @@ public class ThreadPool{
         return false;
     }
 
+    /**
+     * Acknowledge the completion of initialization. Add itself to idle thread pool.
+     * @param worker
+     */
     public void acknowledgeInit(Worker worker) {
         countDownLatch.countDown();
         idleThreads.add(worker);
     }
 
+    /**
+     * Acknowledge the completion of a job and return back to idle thread pool
+     * @param worker Worker thread
+     */
     public void acknowledgeCompletion(Worker worker) {
         idleThreads.add(worker);
     }

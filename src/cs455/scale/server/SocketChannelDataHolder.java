@@ -5,18 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * A data holder object attached with each channel.
+ * It will contain the read buffer and a set of byte[] that needs to be written back.
+ * The accessing entity needs to acquire corresponding read and write locks.
  * Author: Thilina
  * Date: 3/7/14
  */
-public class ExtendedBuffer {
+public class SocketChannelDataHolder {
 
     private ByteBuffer readBuffer =  ByteBuffer.allocate(1024*8);
-    //private ByteBuffer writeBuffer = ByteBuffer.allocate(20);
-    public Object readLock = new Object();
-    public Object writeLock = new Object();
+    public final Object readLock = new Object();
+    public final Object writeLock = new Object();
     private List<byte[]> writeBacklog = new ArrayList<byte[]>();
-
-    //private volatile AtomicBoolean readReady = new AtomicBoolean(true);
 
     public ByteBuffer getReadBuffer(){
         return readBuffer;
@@ -50,6 +50,12 @@ public class ExtendedBuffer {
         }
     }
 
+    /**
+     * This method is used when the writer cannot write all the data in the first byte[]
+     * to the channel. So the remaining set of bytes needs to be added back to the head
+     * of the list for next writer thread to precess.
+     * @param remaining
+     */
     public void completeWriting(byte[] remaining){
         synchronized (writeBacklog){
             writeBacklog.remove(0);

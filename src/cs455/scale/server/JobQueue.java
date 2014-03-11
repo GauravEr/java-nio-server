@@ -1,9 +1,14 @@
 package cs455.scale.server;
 
 import cs455.scale.server.task.Task;
-import cs455.scale.util.ThreadSafeLinkedQueue;
+import cs455.scale.util.ThreadSafeQueue;
 
 /**
+ * The implementation of a Job Queue where selector thread
+ * will be submitting jobs.
+ * Thread pool manager will continuously query for new jobs and schedule them
+ * to one of the idling threads from the thread pool.
+ * This class is a singleton.
  * Author: Thilina
  * Date: 3/2/14
  */
@@ -11,7 +16,7 @@ public class JobQueue {
 
     private static final JobQueue instance = new JobQueue();
 
-    private final ThreadSafeLinkedQueue<Task> jobs = new ThreadSafeLinkedQueue<Task>();
+    private final ThreadSafeQueue<Task> jobs = new ThreadSafeQueue<Task>();
 
     private JobQueue() {
         // singleton
