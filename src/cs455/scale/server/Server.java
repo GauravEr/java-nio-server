@@ -1,6 +1,5 @@
 package cs455.scale.server;
 
-import cs455.scale.server.task.ConnectionAcceptTask;
 import cs455.scale.server.task.ReadTask;
 import cs455.scale.server.task.WriteTask;
 import cs455.scale.util.LoggingUtil;
@@ -13,6 +12,7 @@ import java.net.ServerSocket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
@@ -127,10 +127,17 @@ public class Server {
                         continue;
                     }
                     if (key.isAcceptable()) {
-                        //System.out.println("Connection Accept");
-                        ConnectionAcceptTask connAcceptTask = new ConnectionAcceptTask(key, this);
-                        //connAcceptTask.complete();
-                        jobQueue.addJob(connAcceptTask);
+                        try {
+                            System.out.println("New Connection Accept Request!");
+                            SocketChannel socketChannel = ((ServerSocketChannel)key.channel()).accept();
+                            if (socketChannel != null) {
+                                socketChannel.configureBlocking(false);
+                                socketChannel.register(selector, SelectionKey.OP_READ);
+                                System.out.println("Connection Accept Completed!");
+                            }
+                        } catch (IOException e) {
+                            LoggingUtil.logError(this.getClass(), "Error accepting connection.", e);
+                        }
                     } else if (key.isReadable()) {
                         //System.out.println("Read ready!");
                         ReadTask readTask = new ReadTask(key, this);
