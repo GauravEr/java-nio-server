@@ -1,7 +1,6 @@
 package cs455.scale.server.task;
 
 import cs455.scale.server.Server;
-import cs455.scale.server.ServerChannelChange;
 import cs455.scale.util.LoggingUtil;
 
 import java.io.IOException;
@@ -26,9 +25,9 @@ public class ConnectionAcceptTask extends AbstractTask {
             SocketChannel socketChannel = ((ServerSocketChannel)selectionKey.channel()).accept();
             if (socketChannel != null) {
                 socketChannel.configureBlocking(false);
-                ServerChannelChange serverChannelChange = new ServerChannelChange(
+                /*ServerChannelChange serverChannelChange = new ServerChannelChange(
                         socketChannel, SelectionKey.OP_READ);
-                server.addChannelChange(serverChannelChange);
+                server.addChannelChange(serverChannelChange);*/
                 System.out.println("Connection Accept Completed!");
             }
         } catch (IOException e) {

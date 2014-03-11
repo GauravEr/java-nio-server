@@ -36,18 +36,18 @@ public class PerfTester implements Runnable{
         int mRate = Integer.parseInt(args[2]);
         Random rand = new Random(System.currentTimeMillis());
 
-        ExecutorService tPool = Executors.newFixedThreadPool(20);
-        for(int i = 1; i <= 20; i++){
+        ExecutorService tPool = Executors.newFixedThreadPool(100);
+        for(int i = 1; i <= 100; i++){
             Client client = new Client(serverHost, serverPort, mRate);
             PerfTester perfTester = new PerfTester(client);
             tPool.submit(perfTester);
-           /* if(i % 20 == 0){
+            if(i % 20 == 0){
                 try {
                     Thread.sleep(rand.nextInt(3));
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-            }*/
+            }
         }
         System.out.println("All jobs are submitted to thread pool.");
     }

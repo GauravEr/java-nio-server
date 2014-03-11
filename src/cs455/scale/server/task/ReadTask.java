@@ -2,6 +2,7 @@ package cs455.scale.server.task;
 
 import cs455.scale.server.*;
 import cs455.scale.util.LoggingUtil;
+import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -27,48 +28,44 @@ public class ReadTask extends AbstractTask {
     @Override
     public void complete() {
         SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
-        BufferManager bufferManager = BufferManager.getInstance();
-        ExtendedBuffer extendedBuffer = bufferManager.getBuffer(socketChannel);
-        ByteBuffer byteBuffer = extendedBuffer.getReadBuffer();
-        synchronized (extendedBuffer) {
-            if (extendedBuffer.isReadable()) {
-                try {
-                    int bytesRead = socketChannel.read(byteBuffer);
-                    // client has terminated the connection
-                    if (bytesRead == -1) {
-                        socketChannel.close();
-                        BufferManager.getInstance().deregisterBuffer(socketChannel);
-                        selectionKey.cancel();
-                        return;
-                    }
+        ExtendedBuffer extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
+        ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
+        //synchronized (extendedBuffer) {
+        try {
+            synchronized (extendedBuffer.readLock) {
+                int bytesRead = socketChannel.read(readBuffer);
+                // client has terminated the connection
+                if (bytesRead == -1) {
+                    socketChannel.close();
+                    //BufferManager.getInstance().deregisterBuffer(socketChannel);
+                    selectionKey.cancel();
+                    return;
+                }
 
-                    if (!byteBuffer.hasRemaining()) { // we have read 8k of data
-                        byteBuffer.flip();
-                        Socket socket = socketChannel.socket();
-                        LoggingUtil.logInfo(this.getClass(), "Received a hash from " + socket.getInetAddress().getHostName() +
-                                ":" + socket.getPort());
-                        extendedBuffer.setWritable();
-
-                        ServerChannelChange serverChannelChange =
-                                new ServerChannelChange(socketChannel, SelectionKey.OP_WRITE);
-                        server.addChannelChange(serverChannelChange);
-                    }
-                } catch (IOException e) {
-                    try {
-                        if (selectionKey.isValid() && socketChannel.isOpen()) {
-                            LoggingUtil.logError(this.getClass(), "Closing the client connection.");
-                            socketChannel.close();
-                            BufferManager.getInstance().deregisterBuffer(socketChannel);
-                            selectionKey.cancel();
-                        }
-                    } catch (IOException ignore) {
-
-                    }
+                if (!readBuffer.hasRemaining()) { // we have read 8k of data
+                    readBuffer.flip();
+                    Socket socket = socketChannel.socket();
+                    LoggingUtil.logInfo(this.getClass(), "Received a hash from " + socket.getInetAddress().getHostName() +
+                            ":" + socket.getPort());
+                    byte[] receivedData = new byte[1024 * 8];
+                    readBuffer.get(receivedData);
+                    byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
+                    extendedBuffer.addToWriteBacklog(hashCodeInBytes);
+                    readBuffer.clear();
                 }
             }
-            else { // defer the read
-                JobQueue.getInstance().addJob(this);
+        } catch (IOException e) {
+            try {
+                if (selectionKey.isValid() && socketChannel.isOpen()) {
+                    LoggingUtil.logError(this.getClass(), "Closing the client connection.");
+                    socketChannel.close();
+                    //BufferManager.getInstance().deregisterBuffer(socketChannel);
+                    selectionKey.cancel();
+                }
+            } catch (IOException ignore) {
+
             }
         }
     }
 }
+

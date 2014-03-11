@@ -22,46 +22,38 @@ public class WriteTask extends AbstractTask{
     public WriteTask(SelectionKey key, Server server) {
         super(key, server);
         this.socketChannel = (SocketChannel)key.channel();
-        this.extendedBuffer = BufferManager.getInstance().getBuffer(socketChannel);
+        //this.extendedBuffer = BufferManager.getInstance().getBuffer(socketChannel);
+        this.extendedBuffer = (ExtendedBuffer) selectionKey.attachment();
     }
 
     @Override
     public void complete() {
-        synchronized (extendedBuffer) {
-
+        synchronized (extendedBuffer.writeLock) {
             if (extendedBuffer.isWritable()) {
-                ByteBuffer writeBuffer = extendedBuffer.getWriteBuffer();
+                byte[] bytesToWrite = extendedBuffer.getFromWriteBacklog();
+                ByteBuffer writeBuffer = ByteBuffer.wrap(bytesToWrite);
                 // Check if the write buffer is empty which means we need to calculate the hash
                 // otherwise it's half written buffer.
-                if (writeBuffer.position() == 0) {
-                    ByteBuffer readBuffer = extendedBuffer.getReadBuffer();
-                    byte[] receivedData = new byte[1024*8];
-                    readBuffer.get(receivedData);
-                    byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
+                if (writeBuffer.limit() == 20) {
                     Socket socket = socketChannel.socket();
                     LoggingUtil.logInfo(this.getClass(), "Sending hash " +
-                            ScaleUtil.hexStringFromBytes(hashCodeInBytes) + "to client " +
+                            ScaleUtil.hexStringFromBytes(bytesToWrite) + "to client " +
                             socket.getInetAddress().getHostName() + ":" + socket.getPort());
-                    writeBuffer.put(hashCodeInBytes);
-                    writeBuffer.flip();
-                    readBuffer.clear();
                 }
                 try {
                     socketChannel.write(writeBuffer);
                     if(writeBuffer.hasRemaining()){
-                        JobQueue.getInstance().addJob(this);
+                        byte[] remaining = new byte[writeBuffer.remaining()];
+                        writeBuffer.get(remaining);
+                        extendedBuffer.completeWriting(remaining);
                     } else {
-                        writeBuffer.clear();
-                        extendedBuffer.setReadable();
-                        ServerChannelChange serverChannelChange =
-                                new ServerChannelChange(socketChannel, SelectionKey.OP_READ);
-                        server.addChannelChange(serverChannelChange);
+                        extendedBuffer.completeWriting();
                     }
                 } catch (IOException e) {
                     try {
                         LoggingUtil.logError(this.getClass(), "Closing the client connection.");
                         socketChannel.close();
-                        BufferManager.getInstance().deregisterBuffer(socketChannel);
+                        //BufferManager.getInstance().deregisterBuffer(socketChannel);
                         selectionKey.cancel();
                     } catch (IOException ignore) {
 

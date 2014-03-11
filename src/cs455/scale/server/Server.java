@@ -98,7 +98,7 @@ public class Server {
         while (true) {
             try {
                 // check for changes
-                if (!channelChanges.isEmpty()) {
+                /*if (!channelChanges.isEmpty()) {
                     Iterator<ServerChannelChange> changes = channelChanges.iterator();
                     // Apply the changes
                     while (changes.hasNext()) {
@@ -107,7 +107,7 @@ public class Server {
                         channelChange.getChannel().register(selector, channelChange.getNewInterest());
                         changes.remove();
                     }
-                }
+                }*/
 
                 // now check for new keys
                 int numOfKeys = selector.select();
@@ -132,7 +132,9 @@ public class Server {
                             SocketChannel socketChannel = ((ServerSocketChannel)key.channel()).accept();
                             if (socketChannel != null) {
                                 socketChannel.configureBlocking(false);
-                                socketChannel.register(selector, SelectionKey.OP_READ);
+                                ExtendedBuffer extendedBuffer = new ExtendedBuffer();
+                                socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE,
+                                        extendedBuffer);
                                 System.out.println("Connection Accept Completed!");
                             }
                         } catch (IOException e) {
