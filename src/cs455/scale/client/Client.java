@@ -160,7 +160,7 @@ public class Client {
     public void addHashCode(String hashCode) {
         synchronized (hashCodes) {
             hashCodes.add(hashCode);
-            System.out.println("hash elements: " + hashCodes.size());
+            LoggingUtil.logInfo(this.getClass(), "Hash Element Count: " + hashCodes.size());
         }
     }
 
@@ -170,6 +170,7 @@ public class Client {
             while (hashValues.hasNext()) {
                 String storedHash = hashValues.next();
                 if (storedHash.equals(hashCode)) {
+                    LoggingUtil.logInfo(this.getClass(), "Removing hash: " + hashCode);
                     hashValues.remove();
                     return true;
                 }

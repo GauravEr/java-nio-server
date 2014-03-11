@@ -1,5 +1,6 @@
 package cs455.scale.client;
 
+import cs455.scale.util.LoggingUtil;
 import cs455.scale.util.ScaleUtil;
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ public class WriteWorker extends Thread {
                         final byte[] payload = ScaleUtil.getPayLoad();
                         final String hashCode = ScaleUtil.hexStringFromBytes(ScaleUtil.SHA1FromBytes(payload));
                         client.addHashCode(hashCode);
-                        System.out.println("Added hash code: " + hashCode);
+                        LoggingUtil.logInfo(this.getClass(), "Sending hash code: " + hashCode);
                         byteBuffer.put(payload);
                         byteBuffer.flip();
                     }

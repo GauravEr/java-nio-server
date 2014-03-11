@@ -2,6 +2,7 @@ package cs455.scale.client.pertest;
 
 import cs455.scale.client.Client;
 
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -33,12 +34,20 @@ public class PerfTester implements Runnable{
         String serverHost = args[0];
         int serverPort = Integer.parseInt(args[1]);
         int mRate = Integer.parseInt(args[2]);
+        Random rand = new Random(System.currentTimeMillis());
 
-        ExecutorService tPool = Executors.newFixedThreadPool(100);
-        for(int i = 0; i < 100; i++){
+        ExecutorService tPool = Executors.newFixedThreadPool(20);
+        for(int i = 1; i <= 20; i++){
             Client client = new Client(serverHost, serverPort, mRate);
             PerfTester perfTester = new PerfTester(client);
             tPool.submit(perfTester);
+           /* if(i % 20 == 0){
+                try {
+                    Thread.sleep(rand.nextInt(3));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }*/
         }
         System.out.println("All jobs are submitted to thread pool.");
     }
