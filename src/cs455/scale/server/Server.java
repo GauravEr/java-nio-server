@@ -88,7 +88,7 @@ public class Server {
         InetSocketAddress inetSocketAddress = new InetSocketAddress(serverAddress, port);
         serverSocket.bind(inetSocketAddress);
 
-        LoggingUtil.logInfo(this.getClass(), "Server Started on " + serverAddress.getHostAddress() + ":" + port);
+        LoggingUtil.logInfo(this.getClass(), "Server Started on " + serverAddress.getHostName() + ":" + port);
 
         // register for interest on accepting connections
         serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);

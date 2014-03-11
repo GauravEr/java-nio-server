@@ -1,3 +1,6 @@
 #!/bin/bash
-
-java cs455.scale.client.blocking.BlockingClient 129.82.99.181 7077 10
+for i in {1..2}
+do
+	#echo 'Test'
+	java cs455.scale.client.Client st-vrain 7077 10 > $i'.log'
+done
