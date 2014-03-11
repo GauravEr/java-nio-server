@@ -133,7 +133,7 @@ public class Server {
                             if (socketChannel != null) {
                                 socketChannel.configureBlocking(false);
                                 ExtendedBuffer extendedBuffer = new ExtendedBuffer();
-                                socketChannel.register(selector, SelectionKey.OP_READ,
+                                socketChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE,
                                         extendedBuffer);
                                 System.out.println("Connection Accept Completed!");
                             }

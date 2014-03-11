@@ -49,8 +49,6 @@ public class WriteTask extends AbstractTask{
                     } else {
                         extendedBuffer.completeWriting();
                     }
-                    selectionKey.interestOps(SelectionKey.OP_READ);
-                    selectionKey.attach(extendedBuffer);
                 } catch (IOException e) {
                     try {
                         LoggingUtil.logError(this.getClass(), "Closing the client connection.");
