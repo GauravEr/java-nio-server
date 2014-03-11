@@ -52,6 +52,8 @@ public class ReadTask extends AbstractTask {
                     byte[] hashCodeInBytes = ScaleUtil.SHA1FromBytes(receivedData);
                     extendedBuffer.addToWriteBacklog(hashCodeInBytes);
                     readBuffer.clear();
+                    selectionKey.interestOps(SelectionKey.OP_WRITE);
+                    selectionKey.attach(extendedBuffer);
                 }
             }
         } catch (IOException e) {
