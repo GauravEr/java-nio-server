@@ -10,8 +10,10 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Author: Thilina
@@ -27,7 +29,6 @@ public class Client {
     private WriteWorker writeWorker;
     private ReadWorker readWorker;
     private List<String> hashCodes = new LinkedList<String>();
-    private final Queue<SocketChannel> cancelledChannels = new ConcurrentLinkedQueue<SocketChannel>();
 
     public Client(String serverHost, int serverPort, int messageRate) {
         this.serverHost = serverHost;
@@ -71,12 +72,6 @@ public class Client {
             // register for connect.
             socketChannel.register(selector, SelectionKey.OP_CONNECT);
             while (true) {
-                // first check for cancelled channels.
-                for (SocketChannel channel : cancelledChannels) {
-                    System.out.println("Cancelling a Channel");
-                    SelectionKey selectionKey = channel.keyFor(selector);
-                    selectionKey.cancel();
-                }
 
                 // now check for new keys
                 int numOfKeys = selector.select();
@@ -177,10 +172,6 @@ public class Client {
             }
         }
         return false;
-    }
-
-    public void cancelChannel(SocketChannel socketChannel) {
-        cancelledChannels.add(socketChannel);
     }
 
 }

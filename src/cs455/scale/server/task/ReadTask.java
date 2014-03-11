@@ -1,6 +1,7 @@
 package cs455.scale.server.task;
 
-import cs455.scale.server.*;
+import cs455.scale.server.ExtendedBuffer;
+import cs455.scale.server.Server;
 import cs455.scale.util.LoggingUtil;
 import cs455.scale.util.ScaleUtil;
 

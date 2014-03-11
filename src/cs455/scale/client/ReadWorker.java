@@ -32,7 +32,6 @@ public class ReadWorker extends Thread {
                     int count = socketChannel.read(buffer);
                     if(count == -1){
                         socketChannel.close();
-                        client.cancelChannel(socketChannel);
                         break;
                     }
 

@@ -14,9 +14,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Author: Thilina
@@ -28,7 +26,6 @@ public class Server {
     private final int port;
     private final InetAddress serverAddress;
     private final ThreadPool threadPool;
-    private Queue<ServerChannelChange> channelChanges = new ConcurrentLinkedQueue<ServerChannelChange>();
     private Selector selector;
 
     public Server(int port, int threadPoolSize) {
@@ -40,11 +37,6 @@ public class Server {
     public boolean initialize() throws IOException {
         this.selector = Selector.open();
         return threadPool.initialize();
-    }
-
-    public void addChannelChange(ServerChannelChange channelChange) {
-        channelChanges.add(channelChange);
-        selector.wakeup();
     }
 
     public static void main(String[] args) {
@@ -97,17 +89,6 @@ public class Server {
 
         while (true) {
             try {
-                // check for changes
-                /*if (!channelChanges.isEmpty()) {
-                    Iterator<ServerChannelChange> changes = channelChanges.iterator();
-                    // Apply the changes
-                    while (changes.hasNext()) {
-                        ServerChannelChange channelChange = changes.next();
-                        //ExtendedBuffer extBuffer = new ExtendedBuffer();
-                        channelChange.getChannel().register(selector, channelChange.getNewInterest());
-                        changes.remove();
-                    }
-                }*/
 
                 // now check for new keys
                 int numOfKeys = selector.select();

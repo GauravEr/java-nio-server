@@ -2,13 +2,11 @@ package cs455.scale.server;
 
 import cs455.scale.server.task.Task;
 import cs455.scale.util.LoggingUtil;
+import cs455.scale.util.ThreadSafeLinkedQueue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Author: Thilina
@@ -21,11 +19,8 @@ public class ThreadPool{
     private final ThreadPoolManager threadPoolManager;
     private final CountDownLatch countDownLatch;
     private volatile boolean initialized;
-    private Queue<Worker> idleThreads;
+    private ThreadSafeLinkedQueue<Worker> idleThreads;
 
-    // temp variables
-    private AtomicLong submittedJobCount = new AtomicLong();
-    private AtomicLong completedJobCount = new AtomicLong();
 
     private class ThreadPoolManager extends Thread {
 
@@ -38,7 +33,6 @@ public class ThreadPool{
                 synchronized (jobQueue) {
                     if (jobQueue.hasJobs()) {
                         task = jobQueue.getNextJob();
-                        //System.out.println("Got the job" + task.getClass());
                     } else {
                         try {
                             jobQueue.wait();
@@ -50,7 +44,6 @@ public class ThreadPool{
                         }
                     }
                     if (task != null && !idleThreads.isEmpty()) {
-                        //System.out.println("Schuedled the job" + task.getClass());
                         Worker worker = idleThreads.remove();
                         worker.addJob(task);
                         jobQueue.remove(task);
@@ -64,13 +57,12 @@ public class ThreadPool{
         this.size = size;
         countDownLatch = new CountDownLatch(size);
         workers = new ArrayList<Thread>(size);
-        idleThreads = new ConcurrentLinkedQueue<Worker>();
+        idleThreads = new ThreadSafeLinkedQueue<Worker>();
         threadPoolManager = new ThreadPoolManager();
     }
 
     public boolean initialize() {
         threadPoolManager.start();
-        //new Thread(statisticsThread).start();
         for (int i = 0; i < size; i++) {
             workers.add(new Thread(new Worker(this)));
         }
@@ -97,8 +89,6 @@ public class ThreadPool{
 
     public void acknowledgeCompletion(Worker worker) {
         idleThreads.add(worker);
-//        System.out.println("idle thread count: " + idleThreads.size());
-        completedJobCount.incrementAndGet();
     }
 
 }

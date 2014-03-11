@@ -50,7 +50,6 @@ public class WriteWorker extends Thread {
                 } catch (IOException e) {
                     try {
                         socketChannel.close();
-                        client.cancelChannel(socketChannel);
                     } catch (IOException ignore) {
 
                     }

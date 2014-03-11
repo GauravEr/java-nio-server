@@ -2,9 +2,7 @@ package cs455.scale.server;
 
 import cs455.scale.server.task.Task;
 import cs455.scale.util.LoggingUtil;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import cs455.scale.util.ThreadSafeLinkedQueue;
 
 /**
  * Author: Thilina
@@ -14,7 +12,7 @@ public class Worker implements Runnable {
 
     private final ThreadPool threadPool;
     private boolean initialized;
-    private Queue<Task> jobQueue = new ConcurrentLinkedQueue<Task>();
+    private ThreadSafeLinkedQueue<Task> jobQueue = new ThreadSafeLinkedQueue<Task>();
 
     public Worker(ThreadPool threadPool) {
         this.threadPool = threadPool;

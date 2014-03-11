@@ -1,9 +1,7 @@
 package cs455.scale.server;
 
 import cs455.scale.server.task.Task;
-
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import cs455.scale.util.ThreadSafeLinkedQueue;
 
 /**
  * Author: Thilina
@@ -13,7 +11,7 @@ public class JobQueue {
 
     private static final JobQueue instance = new JobQueue();
 
-    private final Queue<Task> jobs = new ConcurrentLinkedQueue<Task>();
+    private final ThreadSafeLinkedQueue<Task> jobs = new ThreadSafeLinkedQueue<Task>();
 
     private JobQueue() {
         // singleton
@@ -39,7 +37,7 @@ public class JobQueue {
         return null;
     }
 
-    public synchronized void remove(Task task){
+    public void remove(Task task){
         jobs.remove(task);
     }
 
