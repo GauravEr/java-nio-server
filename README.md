@@ -6,14 +6,14 @@
 
 ## Running
 - To run the server;
-    java cs455.scale.server.Server <port_number> <thread_pool_size>
+    java cs455.scale.server.Server port_number thread_pool_size
 
     E.g.: java cs455.scale.server.Server 7077 5
 
     This will start up the server and prints the host address and port it's bound to.
 
 - To run the client;
-    java cs455.scale.client.Client <server_host> <server_port> <message_rate>
+    java cs455.scale.client.Client server_host server_port message_rate
 
     E.g.: java cs455.scale.client.Client st-vrain 7077 4
 
