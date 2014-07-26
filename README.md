@@ -3,6 +3,8 @@ Java NIO Based Server
 
 ***Java NIO based server implementation backed by a configurable thread pool implemented from the ground up. The thread pool is capable of handling incoming network connections, processing traffic and sending out data. This implementation is extensible such that a custom message processing logic can be plugged-in. This implementation was tested upto 200 concurrent users with a thread-pool with 5 worker threads.***
 
+Task Description: [http://www.cs.colostate.edu/~cs455/CS455-Spring14-HW2-PC.pdf](http://www.cs.colostate.edu/~cs455/CS455-Spring14-HW2-PC.pdf)
+
 ## How to compile
 - Running ```make``` or ```make all``` will compile the source code.
 - 'make clean' will remove the compiled classes and temporary files.
