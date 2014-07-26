@@ -1,11 +1,5 @@
 ***Java NIO based server implementation backed by a configurable thread pool implemented from the ground up. The thread pool is capable of handling incoming network connections, processing traffic and sending out data. This implementation is extensible such that a custom message processing logic can be plugged-in. This implementation was tested upto 200 concurrent users with a thread-pool with 5 worker threads.***
 
-## Files
-Following files are included in this archive.
-	- README
-	- Makefile : A Make file to compile the source.
-	- src : The directory that contains the complete source code.
-
 ## How to compile
 - Running 'make' or 'make all' will compile the source code.
 - 'make clean' will remove the compiled classes and temporary files.
