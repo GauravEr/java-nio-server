@@ -1,4 +1,4 @@
-***A MapReduce program that analyzes a corpus comprised of books published by authoris spanning centuries. As part of the analysis, Flesch Reading Ease and Flesch–Kincaid Grade Level scores along with the Term Frequency-Inverse Document Frequency (TF-IDF) scores are calculated based on the extracted N-grams. This program was implemented targeting Hadoop MapReduce runtime and was tested for a corpus of 1000 books obtained from Project Guttenberg.***
+***Java NIO based server implementation backed by a configurable thread pool implemented from the ground up. The thread pool is capable of handling incoming network connections, processing traffic and sending out data. This implementation is extensible such that a custom message processing logic can be plugged-in. This implementation was tested upto 200 concurrent users with a thread-pool with 5 worker threads.***
 
 ## Files
 Following files are included in this archive.
